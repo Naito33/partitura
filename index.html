@@ -83,8 +83,9 @@ body.dragging #selbox{opacity:.5}
 body.multi .card.sel{outline-color:color-mix(in srgb,var(--acc) 70%,transparent)}
 .card.flash{animation:flash 1.4s}
 .card:hover{box-shadow:var(--sh),0 0 0 1px var(--line2)}
-.card:not(.sel) :is(.txt,.rt,.ttl,.cap,.url,.field,select,iframe,input[type=range],.lk,.tmin),
-body.multi .card :is(.txt,.rt,.ttl,.cap,.url,.field,select,iframe,input[type=range],.lk,.tmin){pointer-events:none}
+.card:not(.sel) :is(.txt,.rt,.ttl,.cap,.url,.field,select,iframe,input[type=range],.lk,.tmin,img),
+body.multi .card :is(.txt,.rt,.ttl,.cap,.url,.field,select,iframe,input[type=range],.lk,.tmin,img){pointer-events:none}
+.card img{pointer-events:none}
 body.dragging iframe{pointer-events:none}
 .card:not(.sel){cursor:default}
 .hd{display:flex;align-items:center;gap:6px;height:32px;padding:0 6px 0 12px;user-select:none;-webkit-user-select:none;color:var(--mut);cursor:grab}
@@ -112,7 +113,7 @@ body.dragging iframe{pointer-events:none}
 .t-frame .ttl{font-size:19px;font-weight:750;padding:0;width:auto;flex:0 1 380px;min-width:80px}
 .t-frame .bd,.t-frame .ft{display:none}
 .t-draw,.t-pin{background:none!important;border:0!important;box-shadow:none!important;outline:none!important;min-width:0;pointer-events:none}
-.t-draw svg{overflow:visible}.t-draw .hit{stroke-width:max(14px,calc(14px * var(--inv,1)))}
+.t-draw svg{overflow:visible}.t-draw .hit{stroke-width:16px}
 .t-pin{pointer-events:auto;cursor:grab;filter:drop-shadow(0 4px 3px rgba(0,0,0,.45));z-index:99999!important}
 .t-pin.sel{filter:drop-shadow(0 0 0 var(--acc)) drop-shadow(0 4px 3px rgba(0,0,0,.45))}
 .t-embed{display:flex;flex-direction:column}
@@ -132,7 +133,49 @@ body.dragging iframe{pointer-events:none}
 .rows input[type=checkbox]{width:18px;height:18px;margin:2px 0 0;accent-color:var(--ok);flex:none;cursor:pointer}
 .rt{flex:1;outline:none;min-width:0;word-break:break-word;user-select:text;-webkit-user-select:text;transition:color .2s}
 .rows .rt:empty:before{content:'Пункт';color:var(--mut)}
-.rows li.done .rt{text-decoration:line-through;color:var(--mut)}
+.rows .rt{text-decoration:line-through;text-decoration-color:transparent;text-decoration-thickness:1.5px;transition:text-decoration-color .4s,color .4s}
+.rows li.done .rt{text-decoration-color:var(--mut);color:var(--mut)}
+.rows li{animation:popIn .22s var(--ease)}
+.rows input[type=checkbox]:checked{animation:checkPop .4s var(--ease)}
+@keyframes checkPop{40%{transform:scale(1.4) rotate(-8deg)}}
+.fill.bump{animation:bump .8s ease-out}
+@keyframes bump{30%{filter:brightness(1.5) saturate(1.3);box-shadow:0 0 14px var(--acc2)}}
+.confetti{position:fixed;z-index:80;pointer-events:none;width:7px;height:11px;border-radius:2px;left:0;top:0}
+.card.bare{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+.card.bare .hd,.t-shape .hd{display:none}
+.card.bare .bd{padding:2px 4px}.card.bare.t-image .bd{padding:0}
+.card.bare .im{border-radius:6px}
+.card.bare .cap:placeholder-shown{display:none}.card.bare.sel .cap:placeholder-shown{display:block}
+.card.bare .ft{padding:4px 4px 0}
+.lnk-b{position:absolute;top:-12px;right:10px;display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;background:var(--acc);color:#fff;font-size:11.5px;font-weight:600;box-shadow:var(--sh);z-index:3;max-width:80%;white-space:nowrap;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease)}
+.lnk-b span{overflow:hidden;text-overflow:ellipsis}
+.lnk-b:hover{transform:translateY(-2px) scale(1.05)}
+#bendh{position:absolute;z-index:100004;width:calc(14px * var(--inv,1));height:calc(14px * var(--inv,1));border-radius:50%;background:var(--acc);border:calc(2.5px * var(--inv,1)) solid #fff;transform:translate(-50%,-50%);cursor:move;touch-action:none;box-shadow:0 2px 8px #0007;animation:popIn .2s var(--ease)}
+#bendh:after{content:'';position:absolute;inset:calc(-10px * var(--inv,1));border-radius:50%}
+.clabel{font-size:13px;font-weight:650;fill:var(--tx);paint-order:stroke;stroke:var(--bg);stroke-width:6px;stroke-linejoin:round;pointer-events:none}
+body.moving .card{transition:none!important}
+#world.moving{will-change:transform}
+.lod .card{box-shadow:none!important}.lod .card .ft,.lod .kind,.lod .lnk-b,.lod .acts{visibility:hidden}
+.card.lift{box-shadow:var(--sh2)!important;transform:scale(1.02) rotate(-.4deg);transition:transform .18s var(--ease),box-shadow .18s}
+.t-shape{background:none!important;border:0!important;box-shadow:none!important;min-width:0}
+.t-shape svg.shp{position:absolute;inset:0;overflow:visible;pointer-events:none}
+.t-shape .bd{position:absolute;inset:0;padding:0;display:flex;align-items:center;justify-content:center}
+.t-shape .txt{text-align:center;max-width:84%;max-height:90%;overflow:hidden;font-weight:600;line-height:1.25}
+.t-shape .ft{position:absolute;top:100%;left:0;padding-top:4px}
+.chbox svg.ch,.gbox svg.ch{width:100%;height:auto;display:block;overflow:visible}
+.ch text{fill:var(--mut);font-size:10px}.ch .v{fill:var(--tx);font-weight:650}
+.ch .gt{font-size:9.5px}.ch .gl{font-size:11px;fill:var(--tx)}.ch .gd{fill:var(--mut);text-decoration:line-through}
+.ch .grow{transform-box:fill-box;transform-origin:50% 100%;animation:growY .7s var(--ease) both}
+.ch .growx{transform-box:fill-box;transform-origin:0 50%;animation:growX .7s var(--ease) both}
+.ch .fadein{animation:popIn .5s var(--ease) both}
+.ch .draw{stroke-dasharray:1;animation:drawIn 1s ease-out both}
+.noanim *{animation:none!important}
+@keyframes growY{from{transform:scaleY(0)}}@keyframes growX{from{transform:scaleX(0)}}
+.ced{margin-top:10px;display:grid;gap:5px}.card:not(.sel) .ced,body.multi .ced{display:none}
+.ced .r{display:flex;gap:4px;align-items:center}
+.ced input,.ced select{min-width:0;flex:1;background:var(--line);border:1px solid var(--line2);border-radius:7px;padding:5px 7px;font-size:12.5px;outline:none}
+.ced input.n{flex:0 0 72px}
+.bi.sub .nm>div:first-child:before{content:'↳ ';color:var(--mut)}
 .addrow{color:var(--mut);font-size:13px;padding:5px 2px;border-radius:7px}.addrow:hover{color:var(--tx)}
 .chips{display:inline-flex;align-items:center;gap:4px;padding:1px 2px;border-radius:7px;color:var(--mut);flex:none}
 .chips .more{opacity:0}li:hover .chips .more,.kt:hover .chips .more{opacity:.7}
@@ -145,7 +188,8 @@ body.dragging iframe{pointer-events:none}
 .kc-h{display:flex;align-items:center;gap:6px;font-weight:650;font-size:13px;padding:2px 4px 8px}
 .cnt{color:var(--mut);background:var(--line2);border-radius:99px;padding:0 7px;font-size:11px}
 .kt{background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:8px 10px;margin-bottom:6px;box-shadow:0 1px 2px #0001;animation:popIn .2s}
-.kc.last .kt .rt{text-decoration:line-through;color:var(--mut)}
+.kt .rt{text-decoration:line-through;text-decoration-color:transparent;transition:text-decoration-color .4s,color .4s}
+.kc.last .kt .rt{text-decoration-color:var(--mut);color:var(--mut)}
 .kt-f{display:flex;align-items:center;gap:1px;margin-top:4px}
 .kt-f .cb{width:22px;height:22px;opacity:0}.kt:hover .kt-f .cb{opacity:1}
 @media (hover:none){.kt-f .cb{opacity:.8}}
@@ -166,7 +210,7 @@ body.dragging iframe{pointer-events:none}
 .pl-a select{background:var(--line);border:1px solid var(--line2);border-radius:8px;padding:4px 6px;font-size:12.5px}
 .cpick{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .t-image .bd{padding:0 6px 6px}
-.t-image .im{width:100%;border-radius:10px;background:var(--line) center/cover no-repeat}
+.t-image .im{display:block;width:100%;height:auto;border-radius:10px;background:var(--line);object-fit:cover;-webkit-user-drag:none;user-select:none}
 .cap{display:block;width:100%;background:none;border:0;outline:none;font-size:13px;color:var(--mut);padding:7px 6px 1px}
 .lk{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;border-radius:11px;background:var(--line);color:var(--tx);text-decoration:none}
 .lk:hover{background:var(--line2)}
@@ -311,11 +355,12 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-w
 </style>
 </head>
 <body data-tool="select">
-<main id="vp"><div id="world"><svg id="links"></svg><div id="cards"></div><svg id="ropes"></svg><svg id="draft"></svg><div id="selbox" hidden></div><div id="curs"></div></div></main>
+<main id="vp"><div id="world"><svg id="links"></svg><div id="cards"></div><svg id="ropes"></svg><svg id="draft"></svg><div id="selbox" hidden></div><div id="bendh" hidden title="Тяните, чтобы изменить изгиб · двойной клик — сбросить"></div><div id="curs"></div></div></main>
 <div id="marquee" hidden></div>
 
 <header id="top" class="glass">
   <button class="ib" id="menuBtn" title="Проекты"></button>
+  <button class="ib" id="backBtn" title="Назад к предыдущей доске" hidden></button>
   <input id="boardTitle" placeholder="Название проекта" autocomplete="off">
   <span class="sp"></span>
   <div id="people"></div>
