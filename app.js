@@ -207,7 +207,7 @@ function updateSelUI(){const sb=$('#selbox'),cx=$('#ctx');const its=selItems();
     Object.assign(sb.style,{left:r.x-pad-3/view.s+'px',top:r.y-pad-3/view.s+'px',width:r.w+2*pad+6/view.s+'px',height:r.h+2*pad+6/view.s+'px'});sb.style.rotate=its.length===1&&its[0].rot?its[0].rot+'rad':''}
   else{sb.hidden=true;const m=connMid[selConn];if(!m){cx.hidden=true;return}r={x:m.x,y:m.y,w:0,h:0}}
   if(!cx.childElementCount){cx.hidden=true;return}cx.hidden=false;
-  const W=cx.offsetWidth,H=cx.offsetHeight,sx=(r.x+r.w/2)*view.s+view.x;let sy=r.y*view.s+view.y-H-14;if(sy<74)sy=(r.y+r.h)*view.s+view.y+14;
+  const W=cx.offsetWidth,H=cx.offsetHeight,sx=(r.x+r.w/2)*view.s+view.x;let sy=r.y*view.s+view.y-H-14;if(sy<74)sy=(r.y+r.h)*view.s+view.y+(its.length===1&&!['frame','lens','pin'].includes(its[0].type)?60:14);
   cx.style.left=clamp(sx-W/2,8,innerWidth-W-8)+'px';cx.style.top=clamp(sy,70,innerHeight-H-80)+'px'}
 function onSelChange(){if(wins.comments&&selSet.size===1){wins.comments._card=[...selSet][0];renderWin('comments')}}
 
@@ -394,12 +394,13 @@ function startMove(e,onClick){const B=board();const base=selItems().filter(i=>!i
     for(const l of list)stamp(l.it);touch(B);scheduleDraw();updateSelUI()},
   ()=>{clearTimeout(lp);document.body.classList.remove('dragging');for(const l of list){l.el?.classList.remove('lift');l.it.x=l.x;l.it.y=l.y;place(l.el,l.it)}drawLinks();updateSelUI()})}
 function startResize(e,dir,it){e.preventDefault();e.stopPropagation();const el=elOf(it.id);if(!el||it.locked)return;
-  const o={x:it.x,y:it.y,w:it.w||el.offsetWidth,h:it.h||el.offsetHeight,pts:it.pts&&JSON.parse(JSON.stringify(it.pts)),bend:it.bend&&[...it.bend]};const sx=e.clientX,sy=e.clientY,hasH=HAS_H.has(it.type);let moved=false;
+  const o={fs:it.fs||(it.type==='sticky'?17:it.type==='heading'?34:it.type==='shape'?15:15),x:it.x,y:it.y,w:it.w||el.offsetWidth,h:it.h||el.offsetHeight,pts:it.pts&&JSON.parse(JSON.stringify(it.pts)),bend:it.bend&&[...it.bend]};const sx=e.clientX,sy=e.clientY,hasH=HAS_H.has(it.type);let moved=false;
   beginOp(e.pointerId,ev=>{const dx=(ev.clientX-sx)/view.s,dy=(ev.clientY-sy)/view.s;
     if(!moved){moved=true;snap([it.id],true);document.body.classList.add('dragging')}
     let w=o.w,hh=o.h;if(dir.includes('e'))w=o.w+dx;if(dir.includes('w'))w=o.w-dx;if(hasH){if(dir.includes('s'))hh=o.h+dy;if(dir.includes('n'))hh=o.h-dy}
     if(ev.shiftKey&&hasH&&dir.length===2){const k=Math.max(w/o.w,hh/o.h);w=o.w*k;hh=o.h*k}
     w=Math.max(minW(it),w);hh=Math.max(minH(it),hh);
+    if(ev.altKey&&TXT_T.has(it.type)){it.fs=Math.max(6,Math.round(o.fs*w/o.w));const tt=el.querySelector('.txt');if(tt)tt.style.fontSize=it.fs+'px'}
     it.w=Math.round(w);it.x=Math.round(dir.includes('w')?o.x+o.w-w:o.x);if(hasH){it.h=Math.round(hh);it.y=Math.round(dir.includes('n')?o.y+o.h-hh:o.y)}
     if(it.type==='draw'){const kx=it.w/o.w,ky=it.h/o.h;it.pts=o.pts.map(p=>[+(p[0]*kx).toFixed(1),+(p[1]*ky).toFixed(1)]);if(o.bend)it.bend=[o.bend[0]*kx,o.bend[1]*ky];el.replaceChildren(drawSvg(it))}
     place(el,it);if(it.type==='shape')refreshShape(el,it);if(it.type==='lens')fillLens(it,el);lensTick();drawLinks();updateSelUI();if(now()-liveT>45){liveT=now();rtLive([it])}},
@@ -623,7 +624,7 @@ function buildCtx(){const c=$('#ctx');c.textContent='';const B=board();if(!B)ret
   if(T==='shape')add(ibtn('shapes','Форма',e=>{const r=e.currentTarget.getBoundingClientRect();menu(r.left,r.bottom+6,Object.entries(SHAPES).map(([k,l])=>({icon:'shapes',label:l,fn:()=>setAll(x=>x.kind=k)})))}),
     ibtn('layer',one.nofill?'Залить':'Без заливки',()=>setAll(x=>x.nofill=!x.nofill)),sep());
   if(its.every(x=>x.type==='note'||x.type==='image'))add(h('button',{className:'cb wide',title:'Подложка карточки',innerHTML:ic('layer',15)+(its[0].bare?'Подложка':'Без подложки'),onclick:()=>{const v=!its[0].bare;setAll(x=>{if(v)x.bare=true;else delete x.bare})}}),sep());
-  if(T==='image')add(ibtn('crop','Обрезать',()=>startCrop(one)),ibtn('term','В ASCII-арт',e=>{const r=e.currentTarget.getBoundingClientRect();asciiMenu(r.left,r.bottom+6)}),ibtn('palette','Палитра из картинки',()=>paletteFromImage(one)),ibtn('ext','Открыть',async()=>{const u=one.src||await imgURL(one.img);if(u)window.open(u,'_blank')}),sep());
+  if(T==='image')add(ibtn('dots',one.dot?'Настроить точечный арт':'Сделать точечный арт',()=>openDot({src:one.dot?.src||{type:'img',img:one.img,src:one.src,crop:one.crop},o:one.dot?.o,origin:one,target:one.dot?one.id:null})),ibtn('crop','Обрезать',()=>startCrop(one)),ibtn('term','В ASCII-арт',e=>{const r=e.currentTarget.getBoundingClientRect();asciiMenu(r.left,r.bottom+6)}),ibtn('palette','Палитра из картинки',()=>paletteFromImage(one)),ibtn('ext','Открыть',async()=>{const u=one.src||await imgURL(one.img);if(u)window.open(u,'_blank')}),sep());
   if(T==='embed'||T==='link')add(ibtn('ext','Открыть',()=>window.open(one.url,'_blank','noopener')),sep());
   const inkMode=its.every(i=>i.type==='draw'||i.type==='pin')?true:its.every(i=>i.bare&&i.type==='note')?'tc':false;add(ibtn('drop',inkMode==='tc'?'Цвет текста':'Цвет',e=>colorPop(e.currentTarget,its,inkMode)));
   if(its.some(isSortable)||T==='frame'){const pb=ibtn('check',T==='frame'?'Сделать зоной сортировки':'Важность (клавиши 1, 2, 3, 0)',e=>prioMenu(e.currentTarget,its));const pr=PRIO[one?.prio];if(pr&&T!=='frame'){pb.style.color=pr.c}add(pb)}

@@ -744,12 +744,6 @@ function fillButton(it,el){const col=COLORS[it.c]||'#7c6cff';const tgt=it.link?l
 function addButton(at){const x=at?.x,y=at?.y;const it=addItem({type:'button',text:'',noFocus:true},x,y);setTimeout(()=>{const el=elOf(it.id);if(el)linkPop(el,[it])},60)}
 
 /* ================= поворот, замок, выравнивание ================= */
-function startRotate(e,it){e.preventDefault();e.stopPropagation();if(it.locked)return;const el=elOf(it.id);const r=itemBox(it),c={x:r.x+r.w/2,y:r.y+r.h/2};let moved=false;
-  beginOp(e.pointerId,ev=>{const p=toWorld(ev.clientX,ev.clientY);let a=Math.atan2(p.y-c.y,p.x-c.x)+Math.PI/2;a=Math.atan2(Math.sin(a),Math.cos(a));
-    if(!moved){moved=true;snap([it.id],true);document.body.classList.add('dragging')}
-    if(ev.shiftKey)a=Math.round(a/(Math.PI/12))*Math.PI/12;else if(Math.abs(a)<.06)a=0;
-    if(a)it.rot=+a.toFixed(4);else delete it.rot;place(el,it);updateSelUI();drawLinks();lensTick()},
-  ()=>{document.body.classList.remove('dragging');if(moved){stamp(it);touch(board())}},()=>document.body.classList.remove('dragging'))}
 function alignSel(mode){const its=selItems().filter(i=>!i.locked&&i.type!=='pin');if(its.length<2)return;const bs=its.map(i=>({i,r:itemBox(i)})),R=bounds(its);
   const old=new Map(its.map(i=>[i.id,elOf(i.id)?.getBoundingClientRect()]));snap(its.map(i=>i.id),true);
   if(mode==='dh'||mode==='dv'){const k=mode==='dh'?'x':'y',s=mode==='dh'?'w':'h';bs.sort((a,b)=>a.r[k]-b.r[k]);const gap=(R[s]-bs.reduce((a,b)=>a+b.r[s],0))/(bs.length-1);let p=R[k];for(const b of bs){b.i[k]=Math.round(p+(b.i[k]-b.r[k]));p+=b.r[s]+gap}}
@@ -826,7 +820,7 @@ function drawMinimap(){mmR=0;mmBox.hidden=!mmOn()||!board();if(mmBox.hidden)retu
   for(const it of its){const r=itemBox(it);const x=ox+r.x*k,y=oy+r.y*k,w=Math.max(2,r.w*k),hh=Math.max(2,r.h*k);
     if(it.type==='frame'){g.strokeStyle=COLORS[it.c]||'#8b90a0';g.globalAlpha=.7;g.lineWidth=1;g.strokeRect(x,y,w,hh)}
     else{g.fillStyle=it.type==='sticky'?(COLORS[it.c]||'#fbbf24'):it.type==='image'?'#94a3b8':it.type==='draw'?(it.color&&it.color!=='auto'?it.color:tx):(COLORS[it.c]||tx);g.globalAlpha=it.type==='draw'?.5:.55;g.fillRect(x,y,w,hh)}}
-  g.globalAlpha=1;g.strokeStyle='#7c6cff';g.lineWidth=2;g.fillStyle='rgba(124,108,255,.12)';g.fillRect(ox+v.x*k,oy+v.y*k,v.w*k,v.h*k);g.strokeRect(ox+v.x*k,oy+v.y*k,v.w*k,v.h*k)}
+  g.globalAlpha=1;const ac=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#7c6cff';g.strokeStyle=ac;g.lineWidth=2;g.fillStyle=ac+'22';g.fillRect(ox+v.x*k,oy+v.y*k,v.w*k,v.h*k);g.strokeRect(ox+v.x*k,oy+v.y*k,v.w*k,v.h*k)}
 mmCv.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const go=ev=>{const R=mmCv.getBoundingClientRect(),{k,ox,oy}=mmGeom();const wx=((ev.clientX-R.left)*mmCv.width/R.width-ox)/k,wy=((ev.clientY-R.top)*mmCv.height/R.height-oy)/k;
     tv=null;view.x=vp.clientWidth/2-wx*view.s;view.y=vp.clientHeight/2-wy*view.s;applyView()};go(e);beginOp(e.pointerId,go,()=>{},()=>{})});
 $('#mmBtn').onclick=()=>{localStorage.minimap=mmOn()?'0':'1';scheduleMinimap();if(!mmOn())mmBox.hidden=true};
@@ -991,14 +985,15 @@ async function imageToAscii(it,style='ramp',cols=90){const u=it.src||await imgUR
   let lo=1,hi=0;const lum=new Float32Array(W*H);for(let i=0;i<W*H;i++){const a=d[i*4+3]/255;const l=(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2])/255;lum[i]=a<.1?(dark?0:1):l;lo=Math.min(lo,lum[i]);hi=Math.max(hi,lum[i])}
   const get=(x,y)=>{if(x>=W||y>=H)return 0;let v=(lum[y*W+x]-lo)/((hi-lo)||1);return dark?v:1-v};return rasterToAscii(get,W,H,style==='braille'?'braille':style)}
 function asciiMenu(x,y,up){const img=selItems().find(i=>i.type==='image');
-  menu(x,y,[{head:'ASCII-арт'},{icon:'text',label:'Текст → ASCII',sub:'Любой текст крупными символами',fn:()=>{const t=prompt('Текст для ASCII-баннера (можно по-русски):',board()?.title||'partitura');if(!t)return;
+  menu(x,y,[{head:'Точечный арт'},{icon:'dots',label:'Точечный арт…',sub:'Картинка, текст или эмодзи из точек — как на референсах',fn:()=>openDot({src:img?{type:'img',img:img.img,src:img.src,crop:img.crop}:{type:'emoji',v:'🌸'},origin:img})},
+    {head:'ASCII-арт'},{icon:'text',label:'Текст → ASCII',sub:'Любой текст крупными символами',fn:()=>{const t=prompt('Текст для ASCII-баннера (можно по-русски):',board()?.title||'partitura');if(!t)return;
       menu(x,y,[{head:'Стиль'},...[['solid','Блоки █'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — тонко и чётко'],['ramp','Символы .:-=+#@']].map(([s,l])=>({icon:'text',label:l,fn:()=>addAsciiArt(textToAscii(t,s),null,null,s==='braille'?12:9,{g:pick(['neon','aurora','sunset','ocean','fire']),anim:'flow'})}))],up)}},
     {icon:'image',label:'Картинка → ASCII',sub:img?'Из выделенной картинки':'Сначала выделите картинку',fn:()=>{if(!img)return toast('Выделите картинку на доске');
       const X=()=>img.x+(elOf(img.id)?.offsetWidth||img.w)+40;
       menu(x,y,[{head:'В цветах картинки'},...[['ramp','Цветные символы .:-=+#@'],['blocks','Цветные блоки ░▒▓█']].map(([s,l])=>({icon:'palette',label:l,fn:async()=>{try{const r=await imageToAsciiColor(img,s);addAsciiArt(r.text,X(),img.y,7,null,r.html)}catch{toast('Не получилось прочитать картинку')}}})),
         {head:'Одним цветом или градиентом'},...[['ramp','Символы .:-=+#@'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — максимум деталей']].map(([s,l])=>({icon:'image',label:l,fn:async()=>{try{const t=await imageToAscii(img,s);addAsciiArt(t,X(),img.y,s==='braille'?8:7,{g:'aurora',anim:'none'})}catch{toast('Не получилось прочитать картинку')}}}))],up)}},
-    {head:'Картинки — цельные и цветные'},...Object.entries(EMOJI_ART).map(([k,e])=>({icon:'term',label:e+'  '+k,sub:EMOJI_ANIM[k]?ASC_A[EMOJI_ANIM[k]].toLowerCase():'',fn:()=>addEmojiArt(k,e)})),
-    {icon:'plus',label:'Свой эмодзи…',sub:'Любой эмодзи станет ASCII-картинкой',fn:()=>{const e=prompt('Вставьте эмодзи:','🦄');if(e?.trim())addEmojiArt('',e.trim())}},
+    {head:'Галерея — точечные картинки'},...Object.entries(EMOJI_ART).map(([k,e],i)=>({icon:'dots',label:e+'  '+k,fn:()=>addDotQuick({type:'emoji',v:e},{pal:['moon','pink','phosphor','amber','ice','atari'][i%6]})})),
+    {icon:'plus',label:'Свой эмодзи…',sub:'Любой эмодзи станет точечной картинкой',fn:()=>{const e=prompt('Вставьте эмодзи:','🦄');if(e?.trim())openDot({src:{type:'emoji',v:e.trim()}})}},
     {head:'Рамки, разделители, схемы'},...Object.keys(ASCII_ART).filter(k=>['Терминал','Ноты','Разделитель','Заголовок-рамка','Чек-лист','Стрелки'].includes(k)).map(k=>({icon:'term',label:k,sub:ASC_DEF[k]?ASC_G[ASC_DEF[k][0]].l+' · '+ASC_A[ASC_DEF[k][1]].toLowerCase():'',fn:()=>addAsciiArt(ASCII_ART[k],null,null,13,ASC_DEF[k]?{g:ASC_DEF[k][0],anim:ASC_DEF[k][1]}:null)}))],up)}
 
 
@@ -1063,6 +1058,87 @@ function addEmojiArt(name,e,x,y){const r=emojiToAscii(e);const an=EMOJI_ANIM[nam
 const hasColors=x=>/<span style="color:/.test(x.html||'');
 function stripColors(x){if(!hasColors(x))return;x.htmlColor??=x.html;x.html=x.html.replace(/<span style="color:[^"]*">/g,'').replace(/<\/span>/g,'')}
 function restoreColors(x){if(x.htmlColor){x.html=x.htmlColor;delete x.htmlColor}if(x.asc)delete x.asc.g;delete x.tc}
+
+
+/* ================= точечный арт (dot-matrix), как в референсах ================= */
+const DOT_PAL={moon:{l:'Лунный',a:'#f2f2f2',b:'#5b5bf0'},clouds:{l:'Облака',a:'#f4f4ff',b:'#2b2f7a'},pink:{l:'Неон-розовый',a:'#ffb3ec',b:'#ff4fc4',glow:1},
+  phosphor:{l:'Фосфор',a:'#d8ff8a',b:'#7fd13b',glow:1},amber:{l:'Янтарь',a:'#ffb347',b:'#ff6a00',glow:1},atari:{l:'Atari',a:'#ffd21f',b:'#e8262b'},
+  ice:{l:'Лёд',a:'#d9f6ff',b:'#3fb8ff',glow:1},mono:{l:'Белый',a:'#ffffff',b:'#9a9a9a'},ink:{l:'Чёрный',a:'#111111',b:'#555555'},orig:{l:'Цвета оригинала',a:null,b:null}};
+const BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]].map(r=>r.map(v=>(v+.5)/16));
+const DOT_DEF={cols:96,cell:7,shape:'square',mode:'dither',pal:'moon',duo:true,glow:false,bg:'none',contrast:1.25,invert:false};
+function dotSource(src){return new Promise(async res=>{const c=document.createElement('canvas'),g=c.getContext('2d');
+  if(src.type==='text'){const fs=120,font=`900 ${fs}px "Segoe UI","Arial Black",Arial,sans-serif`;g.font=font;const lines=String(src.v).toUpperCase().split('\n');
+    c.width=Math.ceil(Math.max(...lines.map(l=>g.measureText(l).width)))+20;c.height=Math.ceil(lines.length*fs*1.05)+20;g.font=font;g.textBaseline='top';g.fillStyle='#fff';lines.forEach((l,i)=>g.fillText(l,10,10+i*fs*1.05));return res(c)}
+  if(src.type==='emoji'){c.width=c.height=320;g.font='262px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(src.v,160,172);return res(c)}
+  const u=src.src||await imgURL(src.img);if(!u)return res(null);const im=new Image();im.crossOrigin='anonymous';im.src=u;try{await im.decode()}catch{return res(null)}
+  const cr=src.crop||{x:0,y:0,w:1,h:1};const sw=im.naturalWidth*cr.w,sh=im.naturalHeight*cr.h,k=Math.min(1,900/Math.max(sw,sh));c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+  g.drawImage(im,im.naturalWidth*cr.x,im.naturalHeight*cr.y,sw,sh,0,0,c.width,c.height);res(c)})}
+function dotRender(srcC,o){o={...DOT_DEF,...o};const P=DOT_PAL[o.pal]||DOT_PAL.moon;const cols=o.cols,rows=Math.max(1,Math.round(cols*srcC.height/srcC.width));
+  const sm=document.createElement('canvas');sm.width=cols;sm.height=rows;const sg=sm.getContext('2d');sg.imageSmoothingQuality='high';sg.drawImage(srcC,0,0,cols,rows);const d=sg.getImageData(0,0,cols,rows).data;
+  const isTxt=o.isText;const L=new Float32Array(cols*rows),A=new Float32Array(cols*rows);let lo=1,hi=0;
+  for(let i=0;i<cols*rows;i++){const a=d[i*4+3]/255;A[i]=a;const l=isTxt?a:(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2])/255;L[i]=l;if(a>.1){lo=Math.min(lo,l);hi=Math.max(hi,l)}}
+  const C=o.cell,out=document.createElement('canvas');out.width=cols*C;out.height=rows*C;const g=out.getContext('2d');
+  if(o.bg==='dark'){g.fillStyle='#070707';g.fillRect(0,0,out.width,out.height)}
+  const lay=document.createElement('canvas');lay.width=out.width;lay.height=out.height;const lg=lay.getContext('2d');
+  const dot=(x,y,s,col)=>{lg.fillStyle=col;const px=x*C+(C-s)/2,py=y*C+(C-s)/2;if(o.shape==='round'){lg.beginPath();lg.arc(x*C+C/2,y*C+C/2,s/2,0,7);lg.fill()}else lg.fillRect(px,py,s,s)};
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const i=y*cols+x;if(A[i]<.1){if(o.bg==='dark'&&o.grid)dot(x,y,C*.28,'rgba(255,255,255,.07)');continue}
+    let v=(L[i]-lo)/((hi-lo)||1);v=clamp((v-.5)*o.contrast+.5,0,1);if(o.invert)v=1-v;v*=A[i];
+    const col=o.pal==='orig'?`rgb(${d[i*4]},${d[i*4+1]},${d[i*4+2]})`:(o.duo&&v<.4?P.b:P.a);
+    if(o.mode==='halftone'){const s=C*.95*Math.sqrt(v);if(s>.6)dot(x,y,s,col)}
+    else if(o.mode==='threshold'){if(v>.5)dot(x,y,C*.62,col)}
+    else{if(v>BAYER[y%4][x%4])dot(x,y,C*.62,col);else if(o.bg==='dark'&&o.grid)dot(x,y,C*.28,'rgba(255,255,255,.07)')}}
+  if(o.glow||P.glow&&o.glow!==false){g.save();g.filter=`blur(${Math.max(2,C*.9)}px)`;g.globalAlpha=.85;g.drawImage(lay,0,0);g.restore();g.globalCompositeOperation='lighter';g.globalAlpha=.5;g.drawImage(lay,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1}
+  g.drawImage(lay,0,0);return out}
+async function dotToItem(canvas,meta,x,y,replace){const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));const st=await storeImage(new File([blob],'dot.png',{type:'image/png'}));
+  if(replace){edit(replace,()=>{replace.img=st.img;replace.ar=st.ar;delete replace.src;delete replace.crop;replace.dot=meta});rerenderCard(replace.id);return replace}
+  return addItem({type:'image',img:st.img,ar:st.ar,w:Math.min(560,Math.round(canvas.width/1.6)),bare:true,cap:'',dot:meta,noFocus:true},x,y)}
+function openDot(init={}){openWin('dot','Точечный арт',renderDot,{props:{_st:{src:init.src||null,o:{...DOT_DEF,...(init.o||{})},target:init.target||null,origin:init.origin||null}}})}
+function renderDot(body,w){const st=w._st;const o=st.o;const prev=h('canvas',{className:'dotprev'});let tm=0;
+  const redraw=async()=>{if(!st.src){prev.width=prev.height=1;return}const sc=await dotSource(st.src);if(!sc)return toast('Не удалось прочитать источник');const c=dotRender(sc,{...o,isText:st.src.type==='text'});
+    prev.width=c.width;prev.height=c.height;prev.getContext('2d').drawImage(c,0,0);w._last=c};
+  const upd=(k,v)=>{o[k]=v;clearTimeout(tm);tm=setTimeout(()=>{renderWin('dot',true)},40)};
+  const chip=(lab,on,fn)=>h('button',{className:'chip'+(on?' on':''),onclick:fn},lab);
+  const sel=selItems().find(i=>i.type==='image');
+  body.append(h('div',{className:'sec'},'Источник'),h('div',{className:'filters'},
+    chip('Выделенная картинка',st.src?.type==='img',()=>{if(!sel)return toast('Выделите картинку на доске');st.src={type:'img',img:sel.img,src:sel.src,crop:sel.crop};st.origin=sel;o.isText=false;renderWin('dot',true)}),
+    chip('Текст',st.src?.type==='text',()=>{const t=prompt('Текст (лучше коротко и заглавными):',st.src?.type==='text'?st.src.v:'PARTITURA');if(t){st.src={type:'text',v:t};if(o.cols>80)o.cols=Math.min(160,Math.max(60,t.length*14));renderWin('dot',true)}}),
+    chip('Эмодзи…',st.src?.type==='emoji',()=>{const e=prompt('Эмодзи:',st.src?.type==='emoji'?st.src.v:'🌸');if(e?.trim()){st.src={type:'emoji',v:e.trim()};renderWin('dot',true)}})),
+    h('div',{className:'filters'},...['🌸','🌹','☁️','👁️','🌙','🪐','🚀','🐱','🦋','💀','🌵','🔥','🌊','⚡'].map(e=>chip(e,st.src?.v===e,()=>{st.src={type:'emoji',v:e};renderWin('dot',true)}))));
+  body.append(h('div',{className:'dotwrap'},st.src?prev:h('div',{className:'empty'},'Выберите картинку, текст или эмодзи')));
+  body.append(h('div',{className:'sec'},'Палитра'),h('div',{className:'filters'},...Object.entries(DOT_PAL).map(([k,p])=>{const b=chip(p.l,o.pal===k,()=>upd('pal',k));if(p.a)b.style.boxShadow=`inset 3px 0 0 ${p.a}, inset 6px 0 0 ${p.b}`;return b})),
+    h('div',{className:'sec'},'Стиль'),h('div',{className:'filters'},chip('Дизеринг',o.mode==='dither',()=>upd('mode','dither')),chip('Полутон',o.mode==='halftone',()=>upd('mode','halftone')),chip('Силуэт',o.mode==='threshold',()=>upd('mode','threshold')),
+      h('span',{className:'vs'}),chip('Квадраты',o.shape==='square',()=>upd('shape','square')),chip('Круги',o.shape==='round',()=>upd('shape','round'))),
+    h('div',{className:'filters'},chip('Два тона',o.duo,()=>upd('duo',!o.duo)),chip('Свечение',o.glow||(DOT_PAL[o.pal]?.glow&&o.glow!==false),()=>upd('glow',!(o.glow||(DOT_PAL[o.pal]?.glow&&o.glow!==false)))),chip('Инверсия',o.invert,()=>upd('invert',!o.invert)),
+      chip('Тёмный фон',o.bg==='dark',()=>upd('bg',o.bg==='dark'?'none':'dark')),chip('Фоновые точки',!!o.grid,()=>{o.bg='dark';upd('grid',!o.grid)})),
+    h('div',{className:'tline'},h('span',{className:'muted tl'},'Детали'),h('input',{type:'range',min:30,max:180,value:o.cols,style:'flex:1',onchange:e=>upd('cols',+e.target.value)}),h('span',{className:'muted'},o.cols)),
+    h('div',{className:'tline'},h('span',{className:'muted tl'},'Контраст'),h('input',{type:'range',min:60,max:250,value:o.contrast*100,style:'flex:1',onchange:e=>upd('contrast',e.target.value/100)})),
+    h('div',{className:'tline'},h('span',{className:'muted tl'},'Точка'),...[[4,'S'],[7,'M'],[10,'L'],[14,'XL']].map(([v,l])=>chip(l,o.cell===v,()=>upd('cell',v)))),
+    h('div',{className:'row',style:'display:flex;gap:6px;justify-content:flex-end;margin-top:10px'},
+      st.target?h('button',{className:'btn',onclick:async()=>{if(!w._last)return;await dotToItem(w._last,{src:st.src.type==='img'?{type:'img',img:st.src.img,src:st.src.src,crop:st.src.crop}:st.src,o:{...o}},0,0,board().items[st.target]);toast('Обновлено')}},'Обновить картинку'):null,
+      h('button',{className:'btn pri',onclick:async()=>{if(!w._last)return;const org=st.origin&&board().items[st.origin.id];const el=org&&elOf(org.id);
+        const x=org?org.x+(el?.offsetWidth||org.w)+40:undefined,y=org?.y;const it=await dotToItem(w._last,{src:st.src.type==='img'?{type:'img',img:st.src.img,src:st.src.src,crop:st.src.crop}:st.src,o:{...o}},x,y);if(it){st.target=it.id;renderWin('dot',true)}}},'На доску')));
+  redraw()}
+
+/* ================= HUD: акценты, часы, быстрый точечный арт ================= */
+ICONS.dots=P('ccx="5" cy="5" r="1.6"|ccx="12" cy="5" r="1.6"|ccx="19" cy="5" r="1.6"|ccx="5" cy="12" r="1.6"|ccx="12" cy="12" r="1.6"|ccx="19" cy="12" r="1.6"|ccx="5" cy="19" r="1.6"|ccx="12" cy="19" r="1.6"|ccx="19" cy="19" r="1.6"');
+const HUD_ACC={amber:['#ff8a1f','#ffd166','Янтарь'],phosphor:['#8dff5a','#e6ff9e','Фосфор'],signal:['#ff3b3b','#ffd21f','Сигнал'],ice:['#5ad1ff','#c9f3ff','Лёд'],pink:['#ff6ad5','#ffc2ef','Неон']};
+function applyHud(){const a=HUD_ACC[localStorage.hudAcc]||HUD_ACC.amber;const r=document.documentElement.style;r.setProperty('--hud',a[0]);r.setProperty('--hud2',a[1])}
+applyHud();THN.term='HUD';
+(()=>{const ck=h('span',{id:'hudclock'});$('#brand').after(ck);const sid=Math.random().toString(16).slice(2,6).toUpperCase();
+  const tick=()=>{const d=new Date();ck.textContent=`SESSION ${sid} // ${d.toLocaleTimeString('ru',{hour12:false})}`};tick();setInterval(tick,1000)})();
+(()=>{const host=$('#sCrt').closest('label');const box=h('div',{},h('label',{},'Цвет интерфейса в теме HUD'),h('div',{className:'hudsw'},...Object.entries(HUD_ACC).map(([k,[c,c2,l]])=>{
+  const b=h('button',{type:'button',className:(localStorage.hudAcc||'amber')===k?'on':'',onclick:()=>{localStorage.hudAcc=k;applyHud();box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));drawLinks()}},h('i',{style:`background:linear-gradient(135deg,${c} 50%,${c2} 50%)`}),l);return b})));host.after(box)})();
+async function addDotQuick(src,o={},x,y){const sc=await dotSource(src);if(!sc)return toast('Не удалось прочитать источник');const opt={...DOT_DEF,...o,isText:src.type==='text'};
+  const c=dotRender(sc,opt);if(x==null)[x,y]=spotNear(Math.min(560,c.width/1.6));const it=await dotToItem(c,{src,o:opt},x,y);if(it)setSel([it.id]);return it}
+function startRotate(e,it){e.preventDefault();e.stopPropagation();if(it.locked)return;const el=elOf(it.id);const r=itemBox(it),c={x:r.x+r.w/2,y:r.y+r.h/2};
+  const p0=toWorld(e.clientX,e.clientY),a0=Math.atan2(p0.y-c.y,p0.x-c.x),r0=it.rot||0;let moved=false;const tip=h('div',{className:'rottip'});document.body.append(tip);
+  const fin=()=>{tip.remove();document.body.classList.remove('dragging')};
+  beginOp(e.pointerId,ev=>{const p=toWorld(ev.clientX,ev.clientY);let a=r0+Math.atan2(p.y-c.y,p.x-c.x)-a0;a=Math.atan2(Math.sin(a),Math.cos(a));
+    if(!moved){moved=true;snap([it.id],true);document.body.classList.add('dragging')}
+    if(ev.shiftKey)a=Math.round(a/(Math.PI/12))*(Math.PI/12);else{const q=Math.round(a/(Math.PI/2))*(Math.PI/2);if(Math.abs(a-q)<.06)a=q}
+    if(Math.abs(a)<1e-3)delete it.rot;else it.rot=+a.toFixed(4);place(el,it);updateSelUI();drawLinks();lensTick();
+    tip.textContent=Math.round((a*180/Math.PI+360)%360)+'°'+(ev.shiftKey?' · шаг 15°':'');tip.style.left=ev.clientX+16+'px';tip.style.top=ev.clientY+18+'px'},
+  ()=>{fin();if(moved){stamp(it);touch(board())}},fin)}
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
