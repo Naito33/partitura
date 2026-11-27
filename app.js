@@ -498,7 +498,7 @@ function paintProgress(){const b=board();if(!b)return;
     if(prev!=null&&prev<.999&&p>=.999&&el.style.visibility!=='hidden')celebrate(el);
     if(it.type==='progress'){const r=el.querySelector('input[type=range]');if(r){r.hidden=(it.mode||'manual')!=='manual';r.value=it.val||0}const bg=el.querySelector('.big');if(bg)tweenNum(bg,Math.round(p*100),'%',el._bs??={})}}
   if(!$('#drawer').hidden)renderBoardList()}
-function paintAll(){scheduleMinimap();paintProgress();paintMeta();drawLinks();refreshWins();scheduleCull();zoneCounts();lensTick()}
+function paintAll(){scheduleMinimap();emptyHint();paintProgress();paintMeta();drawLinks();refreshWins();scheduleCull();zoneCounts();lensTick()}
 function zoneCounts(){const b=board();if(!b)return;for(const f of live(b)){if(f.type!=='frame'||!(f.prio||f.inbox))continue;const z=elOf(f.id)?.querySelector('.zc');if(z)z.textContent=frameKids(f).filter(isSortable).length}}
 function zoneAt(it){const r=itemBox(it),cx=r.x+r.w/2,cy=r.y+Math.min(r.h/2,60);return live(board()).find(f=>f.type==='frame'&&(f.prio||f.inbox)&&cx>f.x&&cx<f.x+f.w&&cy>f.y&&cy<f.y+f.h)}
 function dropToZone(it){const z=zoneAt(it);if(!z)return;const np=z.inbox?undefined:z.prio;if((it.prio||undefined)===np)return;if(np)it.prio=np;else delete it.prio;stamp(it);const el=elOf(it.id);if(el){const n=renderItem(it);el.replaceWith(n);if(np)burst(n)}}

@@ -527,11 +527,12 @@ function showCursor(pid,name,m){let c=RT.curs[pid];if(m.b!==cur){if(c)c.el.style
 function rtCursorsClear(){for(const c of Object.values(RT.curs))c.el.style.opacity=0}
 
 /* ================= настройки, импорт/экспорт, верхняя панель ================= */
-function openSettings(){$('#sPlate').checked=localStorage.imgPlate==='1';$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
+function openSettings(){$('#sCrt').checked=localStorage.crt!=='0';$('#sPlate').checked=localStorage.imgPlate==='1';$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
   const a=aiCfg();$('#sAiKey').value=a.key||'';$('#sAiModel').value=a.model||'claude-opus-5-5';$('#setMsg').textContent='';$('#settings').showModal()}
 $('#sClose').onclick=()=>$('#settings').close();
 $('#sOff').onclick=()=>{cfg={};localStorage.cfg='{}';rtStop();setSync('off');$('#settings').close();toast('Синхронизация отключена')};
 $('#sSave').onclick=async()=>{const name=$('#sName').value.trim();if(name!==me()){localStorage.myName=name;updatePeople();paintMeta()}
+  localStorage.crt=$('#sCrt').checked?'1':'0';setTheme(localStorage.theme);
   localStorage.imgPlate=$('#sPlate').checked?'1':'0';localStorage.kinds=$('#sKinds').checked?'1':'0';document.body.classList.toggle('nokinds',localStorage.kinds==='0');
   localStorage.ai=JSON.stringify({key:$('#sAiKey').value.trim(),model:$('#sAiModel').value});
   const lv=$('#sLive').checked;localStorage.live=lv?'1':'0';if(!lv)rtStop();
@@ -566,7 +567,7 @@ $('#inviteBtn').onclick=()=>{$('#settings').close();inviteFlow()};
 $('#subsBtn').onclick=()=>{localStorage.hideSubs=localStorage.hideSubs==='1'?'0':'1';renderBoardList()};$('#backBtn').onclick=()=>{const id=navStack.pop();if(id&&boards[id])openBoard(id);$('#backBtn').hidden=!navStack.length};
 $('#searchBtn').onclick=openSearch;$('#tasksBtn').onclick=()=>wins.tasks?closeWin('tasks'):openWin('tasks','Задачи',renderTasks);
 $('#actBtn').onclick=()=>wins.activity?closeWin('activity'):openWin('activity','Активность',renderActivity);
-$('#themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+$('#themeBtn').onclick=()=>{const t=THEMES[(THEMES.indexOf(document.documentElement.dataset.theme)+1)%3];setTheme(t);toast('Тема: '+THN[t])};
 sEl.onclick=()=>cfg.token?sync():openSettings();
 $('#q').addEventListener('input',runSearch);
 $('#q').addEventListener('keydown',e=>{const rs=$('#qres')._res||[],els=$('#qres').children;
@@ -843,7 +844,7 @@ document.addEventListener('keydown',e=>{if(!pres)return;if(['ArrowRight','ArrowD
 
 /* ================= приглашение друга ================= */
 const appURL=()=>location.origin+location.pathname;
-function inviteText(){if(!cfg.owner||!cfg.repo)return null;return`Привет! Присоединяйся к моим доскам.
+function inviteText(){if(!cfg.owner||!cfg.repo)return null;return`Привет! Присоединяйся к моим доскам в Partitura.
 1) Прими приглашение от GitHub (придёт на почту или на github.com/notifications).
 2) Создай токен: https://github.com/settings/tokens/new?scopes=repo&description=%D0%94%D0%BE%D1%81%D0%BA%D0%B8 — срок на твой выбор, галочка «repo» уже стоит, нажми «Generate token» и скопируй его.
 3) Открой ${appURL()}?join=${encodeURIComponent(cfg.owner+'/'+cfg.repo)} — вставь токен и своё имя.`}
@@ -860,6 +861,36 @@ function inviteFlow(){if(!cfg.owner)return toast('Сначала настрой�
   setTimeout(()=>{openSettings();if(!cfg.token){$('#sOwner').value=o||'';$('#sRepo').value=r||''}const m=$('#setMsg');m.style.color='var(--acc)';
     m.innerHTML=`Вас пригласили в доски <b>${esc(o)}/${esc(r)}</b>. Вставьте свой токен (<a href="https://github.com/settings/tokens/new?scopes=repo&description=%D0%94%D0%BE%D1%81%D0%BA%D0%B8" target="_blank" rel="noopener" style="color:var(--acc)">создать</a>) и имя, затем «Сохранить».`},400)})();
 
+
+/* ================= тема «Терминал», бренд, ASCII ================= */
+const THEMES=['term','dark','light'],THN={term:'Терминал',dark:'Тёмная',light:'Светлая'};
+if(localStorage.themeV!=='2'){localStorage.theme='term';localStorage.themeV='2'}
+setTheme=function(t){if(!THEMES.includes(t))t='term';document.documentElement.dataset.theme=t;localStorage.theme=t;const nx=THEMES[(THEMES.indexOf(t)+1)%3];
+  $('#themeBtn').innerHTML=ic(nx==='light'?'sun':nx==='dark'?'moon':'term');$('#themeBtn').title=`Тема: ${THN[t]} → ${THN[nx]}`;
+  document.querySelector('meta[name=theme-color]').content={term:'#040804',dark:'#0d0e12',light:'#f2f3f7'}[t];if(t==='term')ensureFont('mono');
+  document.body.classList.toggle('crt',t==='term'&&localStorage.crt!=='0');drawLinks();if(typeof scheduleMinimap==='function')scheduleMinimap()};
+ICONS.term=P('m4 17 6-6-6-6|M12 19h8');
+const LOGO_SVG=(s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="20" height="18" rx="2.5"/><path d="M5 8h14M5 11h14M5 14h14M5 17h14" opacity=".28"/><path d="m6.5 9.5 3 2.5-3 2.5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 15.5h5" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+(()=>{const b=h('div',{id:'brand',title:'Partitura'});b.innerHTML=LOGO_SVG()+'<span>partitura<i class="cur"></i></span>';$('#menuBtn').after(b)})();
+const FONT6={P:['██████╗ ','██╔══██╗','██████╔╝','██╔═══╝ ','██║     ','╚═╝     '],A:[' █████╗ ','██╔══██╗','███████║','██╔══██║','██║  ██║','╚═╝  ╚═╝'],
+  R:['██████╗ ','██╔══██╗','██████╔╝','██╔══██╗','██║  ██║','╚═╝  ╚═╝'],T:['████████╗','╚══██╔══╝','   ██║   ','   ██║   ','   ██║   ','   ╚═╝   '],
+  I:['██╗','██║','██║','██║','██║','╚═╝'],U:['██╗   ██╗','██║   ██║','██║   ██║','██║   ██║','╚██████╔╝',' ╚═════╝ ']};
+const banner=w=>[0,1,2,3,4,5].map(r=>[...w].map(c=>FONT6[c][r]).join('')).join('\n');
+function asciiBox(lines){const w=Math.max(...lines.map(l=>l.length));return['┌'+'─'.repeat(w+2)+'┐',...lines.map(l=>'│ '+l.padEnd(w)+' │'),'└'+'─'.repeat(w+2)+'┘'].join('\n')}
+function bootScreen(){if(sessionStorage.booted||localStorage.theme!=='term')return;sessionStorage.booted=1;
+  const nB=Object.values(boards).filter(b=>!b.deleted).length,nI=Object.values(boards).reduce((a,b)=>a+live(b).length,0);
+  const lines=[['ok',`[  OK  ] монтирую ~/boards ............. ${nB} ${plural(nB,'доска','доски','досок')}, ${nI} ${plural(nI,'карточка','карточки','карточек')}`],
+    ['ok',`[  OK  ] синхронизация ................ ${cfg.owner?'github://'+cfg.owner+'/'+cfg.repo:'локально (не настроена)'}`],
+    ['ok',`[  OK  ] p2p-канал .................... ${cfg.token&&localStorage.live!=='0'?'слушаю пиров':'выключен'}`],
+    ['ok','[  OK  ] шрифты, палитры, вдохновение . загружено'],['ok',`[  OK  ] оператор ..................... ${me()||'гость'}`],
+    ['dim','partitura v2026.11 :: нажмите любую клавишу']];
+  const el=h('div',{id:'boot'});el.append(h('pre',{},banner('PARTITURA')),h('div',{className:'sub'},'ДОСКИ · ИДЕИ · КОМАНДА'));const log=h('div',{className:'log'});el.append(log);document.body.append(el);
+  let i=0,done=false;const close=()=>{if(done)return;done=true;el.classList.add('hide');setTimeout(()=>el.remove(),500);removeEventListener('keydown',close,true)};
+  const step=()=>{if(done)return;if(i<lines.length){const[c,t]=lines[i++];log.append(h('div',{className:c},t));setTimeout(step,i===lines.length?450:130)}else setTimeout(close,650)};
+  setTimeout(step,250);el.addEventListener('click',close);addEventListener('keydown',close,true)}
+function emptyHint(){let e=$('#emptyHint');const b=board();const show=b&&!live(b).length;if(!show){e?.remove();return}if(e)return;
+  e=h('pre',{id:'emptyHint'});e.innerHTML=esc(asciiBox(['> доска пуста_','','[N] стикер   [T] текст   [F] раздел','[D] фигуры и диаграммы   [I] пин','двойной клик — добавить что угодно','Ctrl+V — картинка, ссылка, видео','колесо — зум, зажатое колесо — камера'])).replace('пуста_','пуста<i class="cur"></i>');document.body.append(e)}
+
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
@@ -867,7 +898,7 @@ function inviteFlow(){if(!cfg.owner)return toast('Сначала настрой�
     const tip=mk({type:'sticky',c:4,w:270,text:'Как пользоваться:\n• клик — выделить, ещё клик — редактировать\n• рамкой по фону — выделить несколько\n• колесо — зум, пробел/средняя кнопка — двигать холст\n• двойной клик по фону — добавить\n• P — карандаш, A — стрелка, I — пин, R — верёвка\n• Ctrl+V — картинка, ссылка или видео\n• 💡 и ✦ внизу — вдохновение и ИИ'},1300,80);b.items[tip.id]=tip;return b};
   if(!Object.values(boards).some(b=>!b.deleted)&&!cfg.token)first();
   const start=boards[localStorage.cur]&&!boards[localStorage.cur].deleted?localStorage.cur:Object.values(boards).find(b=>!b.deleted)?.id;
-  if(start)openBoard(start);setSync(cfg.token?'ok':'off');
+  if(start)openBoard(start);bootScreen();setSync(cfg.token?'ok':'off');
   if(cfg.token){await sync();if(!Object.values(boards).some(b=>!b.deleted))openBoard(first().id)}
   setInterval(()=>document.visibilityState==='visible'&&sync(),60000);setInterval(pollCur,4000);
   setInterval(()=>{paintMeta();if(wins.activity)renderWin('activity')},60000);
