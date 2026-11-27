@@ -562,6 +562,7 @@ $('#newBoard').onclick=()=>{closeDrawer();showTemplates()};
 $('#openSet').onclick=()=>{closeDrawer();openSettings()};
 $('#menuBtn').onclick=openDrawer;$('#scrim').onclick=closeDrawer;
 $('#backBtn').innerHTML=ic('back');$('#treeBtn').innerHTML=ic('tree');$('#treeBtn').onclick=()=>wins.tree?closeWin('tree'):openWin('tree','Структура досок',renderTree);
+$('#inviteBtn').onclick=()=>{$('#settings').close();inviteFlow()};
 $('#subsBtn').onclick=()=>{localStorage.hideSubs=localStorage.hideSubs==='1'?'0':'1';renderBoardList()};$('#backBtn').onclick=()=>{const id=navStack.pop();if(id&&boards[id])openBoard(id);$('#backBtn').hidden=!navStack.length};
 $('#searchBtn').onclick=openSearch;$('#tasksBtn').onclick=()=>wins.tasks?closeWin('tasks'):openWin('tasks','Задачи',renderTasks);
 $('#actBtn').onclick=()=>wins.activity?closeWin('activity'):openWin('activity','Активность',renderActivity);
@@ -762,7 +763,7 @@ function setParent(child,parent){const c=boards[child];if(!c||child===parent||(p
 function adopt(child,parent){const c=boards[child];if(!c||c.parent||child===parent||isAnc(child,parent)||chain(parent)[0]?.id===child)return;if(setParent(child,parent)){toast(`«${c.title}» теперь поддоска «${boards[parent]?.title}»`);renderCrumbs()}}
 function adoptFromLinks(b){for(const it of live(b)){const l=it.link||(it.type==='link'?it.url:'');if(l?.startsWith('board:'))adopt(l.slice(6).split('#')[0],b.id)}}
 function chain(id){const out=[];let b=boards[id],g=0;while(b&&g++<30){out.unshift(b);const p=b.parent&&boards[b.parent];b=p&&!p.deleted?p:null}return out}
-const kidsOf=id=>Object.values(boards).filter(b=>!b.deleted&&b.parent===id).sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+const kidsOf=id=>Object.values(boards).filter(b=>!b.deleted&&b.parent===id).sort(bOrder);
 function renderCrumbs(){const c=$('#crumbs');if(!c)return;c.textContent='';const ch=chain(cur);
   for(const b of ch.slice(0,-1))c.append(h('button',{className:'crumb',title:'Перейти к родительской доске',onclick:()=>{navStack.push(cur);openBoard(b.id);$('#backBtn').hidden=false}},b.title||'Без названия'),h('span',{className:'csep'},'›'))}
 function renderTree(body){const root=chain(cur)[0];if(!root)return;const showAll=renderTree.all;
@@ -772,7 +773,7 @@ function renderTree(body){const root=chain(cur)[0];if(!root)return;const showAll
     ibtn('plus','Создать поддоску',()=>{const n=createBoard('Новая поддоска','empty');setParent(n.id,b.id);navStack.push(cur);openBoard(n.id);$('#backBtn').hidden=false;setTimeout(()=>{titleIn.focus();titleIn.select()},60)}));
     body.append(r);for(const c of k)row(c,d+1)};
   body.append(h('div',{className:'filters'},h('button',{className:'chip'+(showAll?'':' on'),onclick:()=>{renderTree.all=false;renderWin('tree',true)}},'Эта ветка'),h('button',{className:'chip'+(showAll?' on':''),onclick:()=>{renderTree.all=true;renderWin('tree',true)}},'Все доски')));
-  if(showAll){for(const b of Object.values(boards).filter(b=>!b.deleted&&(!b.parent||!boards[b.parent]||boards[b.parent].deleted)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')))row(b,0)}else row(root,0);
+  if(showAll){for(const b of Object.values(boards).filter(b=>!b.deleted&&(!b.parent||!boards[b.parent]||boards[b.parent].deleted)).sort(bOrder))row(b,0)}else row(root,0);
   body.append(h('div',{className:'muted',style:'padding:10px 4px 0;line-height:1.4'},'Ссылка или кнопка на доску без родителя делает её поддоской текущей. Родителя можно сменить в списке проектов (☰ → ⋯).'))}
 function boardMenu(x,y,b){menu(x,y,[{icon:'edit',label:'Переименовать',fn:()=>{const t=prompt('Название доски:',b.title);if(t?.trim()){b.title=t.trim();b.titleAt=now();touch(b);renderBoardList();if(b.id===cur){titleIn.value=b.title}renderCrumbs()}}},
   {icon:'tree',label:'Сделать поддоской…',sub:'Выбрать родительскую доску',fn:()=>{const opts=Object.values(boards).filter(o=>!o.deleted&&o.id!==b.id&&!isAnc(b.id,o.id));
@@ -781,6 +782,83 @@ function boardMenu(x,y,b){menu(x,y,[{icon:'edit',label:'Переименоват
   {icon:'plus',label:'Создать поддоску',fn:()=>{const n=createBoard('Новая поддоска','empty');setParent(n.id,b.id);openBoard(n.id);setTimeout(()=>{titleIn.focus();titleIn.select()},60)}},'-',
   {icon:'trash',label:'Удалить доску',danger:true,fn:()=>{if(!confirm(`Удалить доску «${b.title}»? Поддоски станут главными.`))return;b.deleted=true;b.delAt=now();touch(b);
     if(b.id===cur){const n=Object.values(boards).find(o=>!o.deleted);openBoard(n?n.id:createBoard('Новый проект').id)}renderBoardList()}}])}
+
+
+/* ================= перетаскивание досок в списке ================= */
+const bOrder=(a,b)=>(a.order??1e9)-(b.order??1e9)||(a.title||'').localeCompare(b.title||'');
+let blistSuppress=false;
+function placeBoard(id,tgt,mode){const t=boards[tgt],par=t.parent&&boards[t.parent]&&!boards[t.parent].deleted?t.parent:null;
+  const sib=Object.values(boards).filter(b=>!b.deleted&&b.id!==id&&((b.parent&&boards[b.parent]&&!boards[b.parent].deleted?b.parent:null)===par)).sort(bOrder);
+  sib.splice(sib.indexOf(t)+(mode==='after'?1:0),0,boards[id]);
+  if(boards[id].parent!==par&&!setParent(id,par))return;sib.forEach((b,i)=>{if(b.order!==i*10){b.order=i*10;b.parentAt=now();touch(b)}})}
+$('#blist').addEventListener('pointerdown',e=>{const row=e.target.closest('.bi');if(!row||e.button!==0||e.target.closest('button'))return;const id=row.dataset.bid;if(!id)return;
+  const sx=e.clientX,sy=e.clientY,touchP=e.pointerType==='touch';let ready=!touchP,drag=false,ghost=null,mode=null,tgt=null;const dr=$('#drawer');
+  const lt=touchP?setTimeout(()=>{ready=true;navigator.vibrate?.(15);row.classList.add('lifted');$('#blist').style.touchAction='none'},380):0;
+  const clear=()=>{for(const x of document.querySelectorAll('.bi.drop-inside,.bi.drop-before,.bi.drop-after'))x.classList.remove('drop-inside','drop-before','drop-after');$('#rootDrop').classList.remove('on')};
+  const end=()=>{clearTimeout(lt);ghost?.remove();row.classList.remove('dragsrc','lifted');dr.classList.remove('dnd');clear();$('#blist').style.touchAction=''};
+  beginOp(e.pointerId,ev=>{if(!ready){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){clearTimeout(lt);end();endOp()}return}
+    if(!drag){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<6)return;drag=true;row.classList.add('dragsrc');dr.classList.add('dnd');ghost=h('div',{className:'bghost glass'},boards[id]?.title||'Доска');document.body.append(ghost)}
+    ghost.style.left=ev.clientX+14+'px';ghost.style.top=ev.clientY+10+'px';clear();
+    const el=document.elementFromPoint(ev.clientX,ev.clientY),r2=el?.closest('.bi');mode=null;tgt=null;
+    if(r2&&r2.dataset.bid&&r2.dataset.bid!==id&&!isAnc(id,r2.dataset.bid)){const rr=r2.getBoundingClientRect(),f=(ev.clientY-rr.top)/rr.height;mode=f<.25?'before':f>.75?'after':'inside';tgt=r2.dataset.bid;r2.classList.add('drop-'+mode)}
+    else if(el?.closest('#rootDrop')){mode='root';$('#rootDrop').classList.add('on')}
+    else if(el?.closest('#scrim')||!el?.closest('#drawer'))mode='canvas';
+    const lb=$('#blist').getBoundingClientRect();if(ev.clientY<lb.top+30)$('#blist').scrollTop-=10;else if(ev.clientY>lb.bottom-30)$('#blist').scrollTop+=10;
+    ghost.dataset.hint={inside:'↳ сделать поддоской «'+(boards[tgt]?.title||'')+'»',before:'↑ поставить выше',after:'↓ поставить ниже',root:'⇱ сделать главной доской',canvas:'Отпустите — кнопка-ссылка на эту доску'}[mode]||''},
+  ev=>{const m=mode,t=tgt;end();if(!drag)return;blistSuppress=true;setTimeout(()=>blistSuppress=false,50);
+    if(m==='inside'){if(setParent(id,t)){const col=new Set(JSON.parse(localStorage.collapsed||'[]'));col.delete(t);localStorage.collapsed=JSON.stringify([...col]);localStorage.hideSubs='0';toast(`«${boards[id].title}» — теперь поддоска «${boards[t].title}»`)}}
+    else if(m==='before'||m==='after')placeBoard(id,t,m);
+    else if(m==='root'){setParent(id,null);toast(`«${boards[id].title}» — теперь главная доска`)}
+    else if(m==='canvas'&&id!==cur){closeDrawer();const p=toWorld(ev.clientX,ev.clientY);batch(()=>addItem({type:'button',text:boards[id].title,link:'board:'+id,noFocus:true},p.x-110,p.y-26));adopt(id,cur)}
+    renderBoardList();renderCrumbs();if(wins.tree)renderWin('tree',true)},end)});
+
+/* ================= мини-карта ================= */
+const mmBox=$('#minimap'),mmCv=mmBox.querySelector('canvas');let mmR=0;
+const mmOn=()=>localStorage.minimap!=='0'&&innerWidth>700;
+function scheduleMinimap(){if(!mmR)mmR=requestAnimationFrame(drawMinimap)}
+function mmGeom(){const b=board();const its=b?live(b):[];const W=vp.clientWidth,H=vp.clientHeight;const v={x:-view.x/view.s,y:-view.y/view.s,w:W/view.s,h:H/view.s};
+  let r=its.length?bounds(its):{x:v.x,y:v.y,w:v.w,h:v.h};const x0=Math.min(r.x,v.x),y0=Math.min(r.y,v.y),x1=Math.max(r.x+r.w,v.x+v.w),y1=Math.max(r.y+r.h,v.y+v.h);
+  const CW=mmCv.width,CH=mmCv.height,pad=8,k=Math.min((CW-2*pad)/(x1-x0||1),(CH-2*pad)/(y1-y0||1));return{its,v,k,ox:pad-x0*k+((CW-2*pad)-(x1-x0)*k)/2,oy:pad-y0*k+((CH-2*pad)-(y1-y0)*k)/2}}
+function drawMinimap(){mmR=0;mmBox.hidden=!mmOn()||!board();if(mmBox.hidden)return;const g=mmCv.getContext('2d'),{its,v,k,ox,oy}=mmGeom();g.clearRect(0,0,mmCv.width,mmCv.height);
+  const tx=getComputedStyle(document.body).color;
+  for(const it of its){const r=itemBox(it);const x=ox+r.x*k,y=oy+r.y*k,w=Math.max(2,r.w*k),hh=Math.max(2,r.h*k);
+    if(it.type==='frame'){g.strokeStyle=COLORS[it.c]||'#8b90a0';g.globalAlpha=.7;g.lineWidth=1;g.strokeRect(x,y,w,hh)}
+    else{g.fillStyle=it.type==='sticky'?(COLORS[it.c]||'#fbbf24'):it.type==='image'?'#94a3b8':it.type==='draw'?(it.color&&it.color!=='auto'?it.color:tx):(COLORS[it.c]||tx);g.globalAlpha=it.type==='draw'?.5:.55;g.fillRect(x,y,w,hh)}}
+  g.globalAlpha=1;g.strokeStyle='#7c6cff';g.lineWidth=2;g.fillStyle='rgba(124,108,255,.12)';g.fillRect(ox+v.x*k,oy+v.y*k,v.w*k,v.h*k);g.strokeRect(ox+v.x*k,oy+v.y*k,v.w*k,v.h*k)}
+mmCv.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const go=ev=>{const R=mmCv.getBoundingClientRect(),{k,ox,oy}=mmGeom();const wx=((ev.clientX-R.left)*mmCv.width/R.width-ox)/k,wy=((ev.clientY-R.top)*mmCv.height/R.height-oy)/k;
+    tv=null;view.x=vp.clientWidth/2-wx*view.s;view.y=vp.clientHeight/2-wy*view.s;applyView()};go(e);beginOp(e.pointerId,go,()=>{},()=>{})});
+$('#mmBtn').onclick=()=>{localStorage.minimap=mmOn()?'0':'1';scheduleMinimap();if(!mmOn())mmBox.hidden=true};
+addEventListener('resize',scheduleMinimap);
+
+/* ================= показ разделов как слайдов ================= */
+let pres=null;
+function startPresent(){const fr=live(board()).filter(i=>i.type==='frame').sort((a,b)=>Math.round(a.y/300)-Math.round(b.y/300)||a.x-b.x);
+  if(!fr.length)return toast('Создайте разделы (F) — каждый станет слайдом');setSel([]);closePops();document.body.classList.add('presenting');pres={fr,i:0};
+  const hud=h('div',{id:'phud',className:'glass'},ibtn('left','Назад (←)',()=>presGo(-1)),h('span',{id:'pnum'}),ibtn('right','Дальше (→, пробел)',()=>presGo(1)),h('span',{className:'vs'}),ibtn('x','Выйти (Esc)',stopPresent));document.body.append(hud);presGo(0)}
+function presGo(d){if(!pres)return;pres.i=clamp(pres.i+d,0,pres.fr.length-1);const f=pres.fr[pres.i];const W=innerWidth,H=innerHeight,s=clamp(Math.min((W-60)/f.w,(H-110)/(f.h||400)),.1,3);
+  animateTo({s,x:W/2-(f.x+f.w/2)*s,y:(H-50)/2-(f.y+(f.h||400)/2)*s});$('#pnum').textContent=`${pres.i+1} / ${pres.fr.length} · ${f.title||'Раздел'}`}
+function stopPresent(){document.body.classList.remove('presenting');$('#phud')?.remove();pres=null}
+document.addEventListener('keydown',e=>{if(!pres)return;if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();e.stopImmediatePropagation();presGo(1)}
+  else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();e.stopImmediatePropagation();presGo(-1)}else if(e.key==='Escape'){e.stopImmediatePropagation();stopPresent()}},true);
+
+/* ================= приглашение друга ================= */
+const appURL=()=>location.origin+location.pathname;
+function inviteText(){if(!cfg.owner||!cfg.repo)return null;return`Привет! Присоединяйся к моим доскам.
+1) Прими приглашение от GitHub (придёт на почту или на github.com/notifications).
+2) Создай токен: https://github.com/settings/tokens/new?scopes=repo&description=%D0%94%D0%BE%D1%81%D0%BA%D0%B8 — срок на твой выбор, галочка «repo» уже стоит, нажми «Generate token» и скопируй его.
+3) Открой ${appURL()}?join=${encodeURIComponent(cfg.owner+'/'+cfg.repo)} — вставь токен и своё имя.`}
+function inviteFlow(){if(!cfg.owner)return toast('Сначала настройте синхронизацию с GitHub');const t=inviteText();
+  openWin('invite','Пригласить друга',body=>{body.append(
+    h('div',{className:'sec'},'Шаг 1 — дать доступ к хранилищу'),h('div',{className:'muted',style:'line-height:1.45'},'Откройте настройки доступа репозитория, нажмите «Add people» и введите логин или почту друга на GitHub (если аккаунта нет — пусть создаст на github.com, это бесплатно).'),
+    h('div',{className:'filters',style:'margin-top:8px'},h('button',{className:'btn pri sm',onclick:()=>window.open(`https://github.com/${cfg.owner}/${cfg.repo}/settings/access`,'_blank','noopener')},'Открыть доступы репозитория ↗')),
+    h('div',{className:'sec'},'Шаг 2 — отправить приглашение'),h('div',{className:'muted',style:'line-height:1.45'},'Скопируйте текст и отправьте другу в мессенджер — в нём ссылка, по которой у него сразу заполнятся настройки.'),
+    h('textarea',{className:'ta',rows:7,readOnly:true,value:t,style:'margin-top:8px;font-size:12.5px'}),
+    h('div',{className:'filters',style:'margin-top:8px'},h('button',{className:'btn pri sm',onclick:()=>{navigator.clipboard?.writeText(t);toast('Приглашение скопировано')}},'Скопировать приглашение'),
+      navigator.share?h('button',{className:'btn sm',onclick:()=>navigator.share({title:'Доски',text:t}).catch(()=>{})},'Поделиться…'):null),
+    h('div',{className:'muted',style:'margin-top:10px;line-height:1.45'},'Когда друг подключится, вы увидите его курсор и правки в реальном времени, а его имя — в шапке доски.'))})}
+(()=>{const j=new URLSearchParams(location.search).get('join');if(!j)return;history.replaceState(null,'',location.pathname);const[o,r]=j.split('/');
+  setTimeout(()=>{openSettings();if(!cfg.token){$('#sOwner').value=o||'';$('#sRepo').value=r||''}const m=$('#setMsg');m.style.color='var(--acc)';
+    m.innerHTML=`Вас пригласили в доски <b>${esc(o)}/${esc(r)}</b>. Вставьте свой токен (<a href="https://github.com/settings/tokens/new?scopes=repo&description=%D0%94%D0%BE%D1%81%D0%BA%D0%B8" target="_blank" rel="noopener" style="color:var(--acc)">создать</a>) и имя, затем «Сохранить».`},400)})();
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');

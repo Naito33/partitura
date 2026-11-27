@@ -196,6 +196,22 @@ body.moving .card{transition:none!important}
 .ced .r{display:flex;gap:4px;align-items:center}
 .ced input,.ced select{min-width:0;flex:1;background:var(--line);border:1px solid var(--line2);border-radius:7px;padding:5px 7px;font-size:12.5px;outline:none}
 .ced input.n{flex:0 0 72px}
+.bi{touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.bi.dragsrc{opacity:.35}.bi.lifted{transform:scale(1.02);box-shadow:var(--sh2)}
+.bi.drop-inside{outline:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 16%,transparent)}
+.bi.drop-before{box-shadow:inset 0 3px 0 var(--acc)}.bi.drop-after{box-shadow:inset 0 -3px 0 var(--acc)}
+.bghost{position:fixed;z-index:95;padding:8px 12px;pointer-events:none;font-weight:650;font-size:13.5px;border-radius:12px;max-width:260px}
+.bghost:after{content:attr(data-hint);display:block;font-size:11.5px;color:var(--acc);font-weight:550;margin-top:2px}
+#rootDrop{display:none;position:absolute;left:12px;right:12px;top:calc(10px + var(--sa));z-index:2;background:var(--card);border:2px dashed var(--line2);border-radius:12px;padding:12px;text-align:center;color:var(--mut);font-size:13px;transition:border-color .15s,color .15s}
+#drawer.dnd #rootDrop{display:block;animation:popIn .2s}#rootDrop.on{border-color:var(--acc);color:var(--acc)}
+#minimap{position:fixed;right:10px;bottom:calc(62px + var(--sb));z-index:19;padding:4px;border-radius:14px;animation:popIn .2s}
+#minimap canvas{display:block;width:220px;height:140px;border-radius:10px;cursor:pointer;background:var(--line)}
+#mmBtn{font-size:15px}
+body.presenting #top,body.presenting #dock,body.presenting #zoom,body.presenting #minimap,body.presenting #hint,body.presenting #ctx{display:none!important}
+#phud{position:fixed;left:50%;bottom:calc(16px + var(--sb));transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px 10px;z-index:60;animation:popIn .2s}
+#phud .cb{width:34px;height:34px}#pnum{font-size:13px;font-weight:600;min-width:120px;text-align:center}
+#phud .vs{width:1px;height:20px;background:var(--line2)}
+@media (max-width:700px){#mmBtn{display:none}}
 .bi.sub .nm>div:first-child:before{content:'↳ ';color:var(--mut)}
 .bi .cb.caret{opacity:.85;transition:transform .2s var(--ease)}.bi .cb.caret:not(.open){transform:rotate(-90deg)}
 #crumbs{display:flex;align-items:center;gap:1px;min-width:0;overflow:hidden;flex-shrink:1}
@@ -438,11 +454,13 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-w
 <div id="ctx" class="glass" hidden></div>
 <div id="penbar" class="glass" hidden></div>
 <nav id="dock" class="glass"></nav>
-<div id="zoom" class="glass"><button id="zo" title="Отдалить (−)"></button><button id="zl" title="Масштаб 100%">100%</button><button id="zi" title="Приблизить (+)"></button><button id="zf" title="Показать всё (Shift+1)"></button></div>
+<div id="minimap" class="glass" hidden><canvas width="220" height="140"></canvas></div>
+<div id="zoom" class="glass"><button id="mmBtn" title="Мини-карта">▦</button><button id="zo" title="Отдалить (−)"></button><button id="zl" title="Масштаб 100%">100%</button><button id="zi" title="Приблизить (+)"></button><button id="zf" title="Показать всё (Shift+1)"></button></div>
 
 <div id="scrim" hidden></div>
 <aside id="drawer" class="glass" hidden>
   <div class="dh"><b>Проекты</b><span class="sp"></span><button class="btn sm" id="subsBtn" title="Показать или скрыть поддоски" style="margin-right:6px">Поддоски</button><button class="btn pri sm" id="newBoard">+ Новый</button></div>
+  <div id="rootDrop">Отпустите здесь — доска станет главной</div>
   <div id="blist"></div>
   <div class="df">
     <button class="btn sm" id="openSet">Настройки</button>
@@ -471,6 +489,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-w
   <label>Ключ API</label><input id="sAiKey" type="password" autocomplete="off" placeholder="sk-ant-…">
   <label>Модель</label><select id="sAiModel"><option value="claude-opus-5-5">Claude Opus 5.5 — умнее всего</option><option value="claude-sonnet-5-5">Claude Sonnet 5.5 — быстрее и дешевле</option><option value="claude-haiku-5-5">Claude Haiku 5.5 — самая дешёвая</option></select>
   <h4>Работа в команде</h4>
+  <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn pri sm" id="inviteBtn">Пригласить друга</button></div>
   <p>Владелец добавляет людей: репозиторий → Settings → Collaborators. Каждый участник вводит тот же репозиторий и <b>свой</b> токен (для чужого личного репозитория — classic-токен со scope <code>repo</code>).</p>
   <div id="setMsg"></div>
   <div class="row">

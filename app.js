@@ -124,7 +124,7 @@ function applyView(){world.style.transform=`translate(${view.x}px,${view.y}px) s
   vp.style.backgroundSize=`${24*view.s}px ${24*view.s}px`;vp.style.backgroundPosition=`${view.x}px ${view.y}px`;
   $('#zl').textContent=Math.round(view.s*100)+'%';updateSelUI();clearTimeout(viewT);viewT=setTimeout(()=>cur&&(localStorage['view:'+cur]=JSON.stringify(view)),300);
   world.classList.add('moving');document.body.classList.add('moving');clearTimeout(applyView.m);applyView.m=setTimeout(()=>{world.classList.remove('moving');document.body.classList.remove('moving')},180);
-  document.body.classList.toggle('lod',view.s<.38);scheduleCull()}
+  document.body.classList.toggle('lod',view.s<.38);scheduleCull();scheduleMinimap()}
 let cullT=0;function scheduleCull(){if(!cullT)cullT=setTimeout(()=>{cullT=0;cull()},90)}
 function cull(){const b=board();if(!b)return;const m=300/view.s,x0=-view.x/view.s-m,y0=-view.y/view.s-m,x1=x0+vp.clientWidth/view.s+2*m,y1=y0+vp.clientHeight/view.s+2*m;
   for(const el of cardsEl.children){const id=el.dataset.id;const L=el.offsetLeft,T=el.offsetTop;
@@ -165,17 +165,19 @@ vp.addEventListener('pointerdown',e=>{
   if(e.pointerType==='touch'){ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(ptrs.size===2){cancelOp();document.body.classList.remove('dragging','panning');const[a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),s:view.s,m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}};return}}
   if(!isBg(e.target))return;closePops();
-  if(e.button===1||e.button===2||spaceDown||tool==='hand'||(e.pointerType==='touch'&&tool==='select')){startPan(e);return}
+  if(e.button===1||spaceDown||tool==='hand'||(e.pointerType==='touch'&&tool==='select')){startPan(e);return}
   if(e.button!==0)return;
   if(tool==='select')startMarquee(e);else if(tool==='pen'||tool==='arrow')startDraw(e,tool);else if(tool==='pin'||tool==='rope')startLink(e,null,'rope')});
 addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;p.x=e.clientX;p.y=e.clientY;
   if(pinch&&ptrs.size>=2){const[a,b]=[...ptrs.values()],m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};panBy(m.x-pinch.m.x,m.y-pinch.m.y);pinch.m=m;zoomInstant(m.x,m.y,Math.hypot(a.x-b.x,a.y-b.y)/pinch.d*pinch.s/view.s)}});
 for(const t of['pointerup','pointercancel'])addEventListener(t,e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null});
-vp.addEventListener('contextmenu',e=>e.preventDefault());
+vp.addEventListener('contextmenu',e=>{e.preventDefault();if(isBg(e.target))showCanvasMenu(e.clientX,e.clientY)});
+vp.addEventListener('mousedown',e=>{if(e.button===1)e.preventDefault()});
+addEventListener('auxclick',e=>{if(e.button===1&&vp.contains(e.target))e.preventDefault()});
 vp.addEventListener('dblclick',e=>{if(isBg(e.target)&&tool==='select')showAddMenu(e.clientX,e.clientY,toWorld(e.clientX,e.clientY))});
 function startPan(e){e.preventDefault();let lx=e.clientX,ly=e.clientY,moved=false;const sx=lx,sy=ly,btn=e.button,touch=e.pointerType==='touch';tv=null;document.body.classList.add('panning');
   beginOp(e.pointerId,ev=>{if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>3)moved=true;panBy(ev.clientX-lx,ev.clientY-ly);lx=ev.clientX;ly=ev.clientY},
-    ev=>{document.body.classList.remove('panning');if(!moved){if(btn===2)showCanvasMenu(ev.clientX,ev.clientY);else if(touch||btn===0)setSel([])}},()=>document.body.classList.remove('panning'))}
+    ev=>{document.body.classList.remove('panning');if(!moved){if(touch||btn===0)setSel([])}},()=>document.body.classList.remove('panning'))}
 function itemBox(it){const el=elOf(it.id);return el?{x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight}:{x:it.x,y:it.y,w:it.w||100,h:it.h||100}}
 function startMarquee(e){const add=e.shiftKey,base=add?new Set(selSet):new Set(),sx=e.clientX,sy=e.clientY,m=$('#marquee');let moved=false;
   beginOp(e.pointerId,ev=>{if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<4)return;moved=true;
@@ -362,7 +364,7 @@ function fillBody(it,el,bd){bd.textContent='';const refill=()=>{fillBody(it,el,b
 /* ================= перемещение и размер ================= */
 function frameKids(f){const out=[];for(const k of live(board())){if(k===f||k.type==='frame')continue;const r=itemBox(k);const cx=k.type==='pin'?k.x:r.x+r.w/2,cy=k.type==='pin'?k.y:r.y+r.h/2;
   if(cx>f.x&&cx<f.x+f.w&&cy>f.y&&cy<f.y+(f.h||400))out.push(k)}return out}
-function cardDown(e,id,el){const it=board()?.items[id];if(!it||e.button===2||el.classList.contains('cropping'))return;
+function cardDown(e,id,el){const it=board()?.items[id];if(e.button===1){e.preventDefault();e.stopPropagation();startPan(e);return}if(!it||e.button===2||el.classList.contains('cropping'))return;
   if(e.pointerType==='touch'&&ptrs.size>=1&&!ptrs.has(e.pointerId))return;
   if(tool==='pin'||tool==='rope'){e.stopPropagation();startLink(e,id,'rope');return}
   if(tool==='arrow'){e.stopPropagation();startLink(e,id,'arrow');return}
@@ -496,7 +498,7 @@ function paintProgress(){const b=board();if(!b)return;
     if(prev!=null&&prev<.999&&p>=.999&&el.style.visibility!=='hidden')celebrate(el);
     if(it.type==='progress'){const r=el.querySelector('input[type=range]');if(r){r.hidden=(it.mode||'manual')!=='manual';r.value=it.val||0}const bg=el.querySelector('.big');if(bg)tweenNum(bg,Math.round(p*100),'%',el._bs??={})}}
   if(!$('#drawer').hidden)renderBoardList()}
-function paintAll(){paintProgress();paintMeta();drawLinks();refreshWins();scheduleCull();zoneCounts();lensTick()}
+function paintAll(){scheduleMinimap();paintProgress();paintMeta();drawLinks();refreshWins();scheduleCull();zoneCounts();lensTick()}
 function zoneCounts(){const b=board();if(!b)return;for(const f of live(b)){if(f.type!=='frame'||!(f.prio||f.inbox))continue;const z=elOf(f.id)?.querySelector('.zc');if(z)z.textContent=frameKids(f).filter(isSortable).length}}
 function zoneAt(it){const r=itemBox(it),cx=r.x+r.w/2,cy=r.y+Math.min(r.h/2,60);return live(board()).find(f=>f.type==='frame'&&(f.prio||f.inbox)&&cx>f.x&&cx<f.x+f.w&&cy>f.y&&cy<f.y+f.h)}
 function dropToZone(it){const z=zoneAt(it);if(!z)return;const np=z.inbox?undefined:z.prio;if((it.prio||undefined)===np)return;if(np)it.prio=np;else delete it.prio;stamp(it);const el=elOf(it.id);if(el){const n=renderItem(it);el.replaceWith(n);if(np)burst(n)}}
@@ -577,6 +579,7 @@ function menu(x,y,items,up){closePops();const m=h('div',{className:'pop glass'})
 function showAddMenu(x,y,at,up){menu(x,y,[{icon:'text',label:'Текст без подложки',fn:()=>addOfType('text',at)},...Object.entries(TYPES).filter(([k])=>!['draw','pin','embed'].includes(k)).map(([k,t])=>({icon:t.icon,label:t.name,fn:()=>addOfType(k,at)}))],up)}
 function showCanvasMenu(x,y){const at=toWorld(x,y);menu(x,y,[{head:'Добавить'},...['sticky','note','todo','image','frame'].map(k=>({icon:TYPES[k].icon,label:TYPES[k].name,fn:()=>addOfType(k,at)})),
   {icon:'more',label:'Другие карточки…',fn:()=>showAddMenu(x,y,at)},'-',{icon:'check',label:'Сортировка по важности',sub:'Разложить по зонам',fn:arrangeZones},
+  {icon:'frame',label:'Показ разделов как слайдов',sub:'← → — листать, Esc — выход',fn:startPresent},
   {icon:'layer',label:document.body.classList.contains('hide-nope')?'Показать «Не нужно»':'Скрыть «Не нужно»',fn:toggleNope},'-',{icon:'cursor',label:'Выделить всё',fn:()=>setSel(live(board()).map(i=>i.id))},{icon:'fit',label:'Показать всё',fn:()=>fitView(true,true)}])}
 function showCardMenu(x,y){const its=selItems();if(!its.length)return;const one=its.length===1?its[0]:null;
   menu(x,y,[{icon:'copy',label:'Дублировать',sub:'Ctrl+D',fn:dupSel},{icon:'front',label:'На передний план',fn:toFront},{icon:'front',label:'На задний план',fn:toBack},
@@ -739,13 +742,13 @@ vp.addEventListener('drop',e=>{e.preventDefault();if(!cur)return;let p=toWorld(e
 /* ================= проекты, поиск, настройки ================= */
 function openDrawer(){renderBoardList();$('#drawer').hidden=$('#scrim').hidden=false}
 function closeDrawer(){$('#drawer').hidden=$('#scrim').hidden=true}
-function renderBoardList(){const l=$('#blist');l.textContent='';const all=Object.values(boards).filter(b=>!b.deleted);const byT=(a,b)=>(a.title||'').localeCompare(b.title||'');
+function renderBoardList(){const l=$('#blist');l.textContent='';const all=Object.values(boards).filter(b=>!b.deleted);const byT=bOrder;
   const hideSubs=localStorage.hideSubs==='1';const col=new Set(JSON.parse(localStorage.collapsed||'[]'));const sb=$('#subsBtn');if(sb)sb.textContent=hideSubs?'Показать поддоски':'Скрыть поддоски';
   const isTop=b=>!b.parent||!boards[b.parent]||boards[b.parent].deleted;const kids={};for(const b of all)if(!isTop(b))(kids[b.parent]??=[]).push(b);
   const row=(b,depth)=>{const k=(kids[b.id]||[]).sort(byT);const p=boardProgress(b);const last=Math.max(0,...Object.values(b.items).map(i=>i.at||0),b.titleAt||0);const open=!col.has(b.id)&&!hideSubs;
     const caret=k.length?h('button',{className:'cb caret'+(open?' open':''),title:open?'Свернуть поддоски':'Развернуть поддоски',innerHTML:ic('chev',14),onclick:e=>{e.stopPropagation();
         if(hideSubs){localStorage.hideSubs='0';col.delete(b.id)}else if(col.has(b.id))col.delete(b.id);else col.add(b.id);localStorage.collapsed=JSON.stringify([...col]);renderBoardList()}}):h('span',{style:'width:26px;flex:none'});
-    l.append(h('div',{className:'bi'+(b.id===cur?' on':'')+(depth?' sub':''),style:depth?`margin-left:${depth*16}px`:null,onclick:()=>openBoard(b.id),oncontextmenu:e=>{e.preventDefault();boardMenu(e.clientX,e.clientY,b)}},caret,
+    l.append(h('div',{className:'bi'+(b.id===cur?' on':'')+(depth?' sub':''),'data-bid':b.id,title:'Тяните: на другую доску — сделать поддоской, между досками — переставить, на холст — кнопка-ссылка',style:depth?`margin-left:${depth*16}px`:null,onclick:()=>{if(!blistSuppress)openBoard(b.id)},oncontextmenu:e=>{e.preventDefault();boardMenu(e.clientX,e.clientY,b)}},caret,
       h('div',{className:'nm'},h('div',{},b.title||'Без названия'),h('small',{},(k.length?`${k.length} ${plural(k.length,'поддоска','поддоски','поддосок')} · `:'')+(p?`${p.d} из ${p.n} задач · `:'')+ago(last)),p?h('div',{className:'bar'},h('div',{className:'fill',style:`width:${p.p*100}%`})):null),
       ibtn('more','Переименовать, сделать поддоской, удалить…',e=>{const r=e.currentTarget.getBoundingClientRect();boardMenu(r.left-150,r.bottom+4,b)})));
     if(open&&depth<6)for(const c of k)row(c,depth+1)};
@@ -762,14 +765,14 @@ function runSearch(){const q=$('#q').value.trim().toLowerCase(),res=[];
   res.slice(0,40).forEach((r,i)=>box.append(h('div',{className:'qr'+(i===0?' on':''),onclick:()=>goRes(r)},h('span',{innerHTML:ic(r.icon,16),className:'muted'}),h('div',{className:'tx'},h('div',{},r.label),h('small',{className:'muted'},r.sub)))));
   if(!res.length)box.append(h('div',{className:'empty'},'Ничего не найдено'));box._res=res}
 function goRes(r){$('#search').close();if(r.b.id!==cur)openBoard(r.b.id);if(r.id)setTimeout(()=>focusCard(r.id),40)}
-const ser=b=>({id:b.id,title:b.title,titleAt:b.titleAt||0,deleted:!!b.deleted,delAt:b.delAt||0,parent:b.parent||null,parentAt:b.parentAt||0,items:b.items});
+const ser=b=>({id:b.id,title:b.title,titleAt:b.titleAt||0,deleted:!!b.deleted,delAt:b.delAt||0,parent:b.parent||null,parentAt:b.parentAt||0,order:b.order??null,items:b.items});
 const blobToDataURL=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
 
 /* ================= слияние и синхронизация с GitHub ================= */
 function mergeBoard(local,remote){if(!local)return{...remote,items:{...remote.items},rev:0};
   if((remote.titleAt||0)>(local.titleAt||0)){local.title=remote.title;local.titleAt=remote.titleAt}
   if((remote.delAt||0)>(local.delAt||0)){local.deleted=remote.deleted;local.delAt=remote.delAt}
-  if((remote.parentAt||0)>(local.parentAt||0)){if(remote.parent)local.parent=remote.parent;else delete local.parent;local.parentAt=remote.parentAt}
+  if((remote.parentAt||0)>(local.parentAt||0)){if(remote.parent)local.parent=remote.parent;else delete local.parent;local.parentAt=remote.parentAt;if(remote.order!=null)local.order=remote.order;else delete local.order}
   for(const[k,ri]of Object.entries(remote.items||{})){const li=local.items[k];if(!li||(ri.at||0)>(li.at||0)){if(li){for(const x of Object.keys(li))delete li[x];Object.assign(li,ri)}else local.items[k]=ri}}return local}
 function sameAs(b,rb){if(b.title!==rb.title||(b.titleAt||0)!==(rb.titleAt||0)||(b.delAt||0)!==(rb.delAt||0))return false;
   const a=Object.keys(b.items),r=rb.items||{};if(a.length!==Object.keys(r).length)return false;return a.every(k=>r[k]&&(r[k].at||0)===(b.items[k].at||0))}
