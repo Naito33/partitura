@@ -992,10 +992,50 @@ async function imageToAscii(it,style='ramp',cols=90){const u=it.src||await imgUR
   const get=(x,y)=>{if(x>=W||y>=H)return 0;let v=(lum[y*W+x]-lo)/((hi-lo)||1);return dark?v:1-v};return rasterToAscii(get,W,H,style==='braille'?'braille':style)}
 function asciiMenu(x,y,up){const img=selItems().find(i=>i.type==='image');
   menu(x,y,[{head:'ASCII-арт'},{icon:'text',label:'Текст → ASCII',sub:'Любой текст крупными символами',fn:()=>{const t=prompt('Текст для ASCII-баннера (можно по-русски):',board()?.title||'partitura');if(!t)return;
-      menu(x,y,[{head:'Стиль'},...[['solid','Блоки █'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — тонко и чётко'],['ramp','Символы .:-=+#@']].map(([s,l])=>({icon:'text',label:l,fn:()=>addAscii(textToAscii(t,s),null,null,s==='braille'?12:9)}))],up)}},
+      menu(x,y,[{head:'Стиль'},...[['solid','Блоки █'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — тонко и чётко'],['ramp','Символы .:-=+#@']].map(([s,l])=>({icon:'text',label:l,fn:()=>addAsciiArt(textToAscii(t,s),null,null,s==='braille'?12:9,{g:pick(['neon','aurora','sunset','ocean','fire']),anim:'flow'})}))],up)}},
     {icon:'image',label:'Картинка → ASCII',sub:img?'Из выделенной картинки':'Сначала выделите картинку',fn:()=>{if(!img)return toast('Выделите картинку на доске');
-      menu(x,y,[{head:'Стиль'},...[['ramp','Символы .:-=+#@'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — максимум деталей']].map(([s,l])=>({icon:'image',label:l,fn:async()=>{try{const t=await imageToAscii(img,s);const el=elOf(img.id);addAscii(t,img.x+(el?.offsetWidth||img.w)+40,img.y,s==='braille'?8:7)}catch{toast('Не получилось прочитать картинку')}}}))],up)}},
-    {head:'Галерея'},...Object.keys(ASCII_ART).map(k=>({icon:'term',label:k,fn:()=>addAscii(ASCII_ART[k])}))],up)}
+      const X=()=>img.x+(elOf(img.id)?.offsetWidth||img.w)+40;
+      menu(x,y,[{head:'В цветах картинки'},...[['ramp','Цветные символы .:-=+#@'],['blocks','Цветные блоки ░▒▓█']].map(([s,l])=>({icon:'palette',label:l,fn:async()=>{try{const r=await imageToAsciiColor(img,s);addAsciiArt(r.text,X(),img.y,7,null,r.html)}catch{toast('Не получилось прочитать картинку')}}})),
+        {head:'Одним цветом или градиентом'},...[['ramp','Символы .:-=+#@'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — максимум деталей']].map(([s,l])=>({icon:'image',label:l,fn:async()=>{try{const t=await imageToAscii(img,s);addAsciiArt(t,X(),img.y,s==='braille'?8:7,{g:'aurora',anim:'none'})}catch{toast('Не получилось прочитать картинку')}}}))],up)}},
+    {head:'Галерея — цветные и анимированные'},...Object.keys(ASCII_ART).map(k=>({icon:'term',label:k,sub:ASC_DEF[k]?ASC_G[ASC_DEF[k][0]].l+' · '+ASC_A[ASC_DEF[k][1]].toLowerCase():'',fn:()=>addAsciiArt(ASCII_ART[k],null,null,13,ASC_DEF[k]?{g:ASC_DEF[k][0],anim:ASC_DEF[k][1]}:null)}))],up)}
+
+
+/* ================= цветной и анимированный ASCII ================= */
+const ASC_G={neon:{l:'Неон',c:['#00f5d4','#9b5de5','#f15bb5']},sunset:{l:'Закат',c:['#ff7e5f','#feb47b','#ffd166']},ocean:{l:'Океан',c:['#43cea2','#38bdf8','#185a9d']},
+  aurora:{l:'Аврора',c:['#7f5af0','#2cb67d','#00d2ff']},fire:{l:'Огонь',c:['#f12711','#f5af19','#ffe259']},matrix:{l:'Матрица',c:['#00ff41','#22c55e','#008f11']},
+  candy:{l:'Конфета',c:['#ff9a9e','#fbc2eb','#a18cd1']},gold:{l:'Золото',c:['#bf953f','#fcf6ba','#b38728']},ice:{l:'Лёд',c:['#e0eafc','#8ec5fc','#a5b4fc']},
+  rainbow:{l:'Радуга',c:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93']}};
+const ASC_A={none:'Без анимации',flow:'Перелив',rainbow:'Радуга по кругу',pulse:'Пульс-свечение',wave:'Волна',glitch:'Глитч',flicker:'Мерцание',type:'Печатная машинка'};
+const ASC_DEF={'Котик':['candy','wave'],'Кот на заборе':['candy','flow'],'Сова':['gold','pulse'],'Кролик':['ice','wave'],'Кофе':['sunset','flow'],'Ракета':['fire','pulse'],
+  'Горы':['aurora','flow'],'Сердце':['sunset','pulse'],'Ноты':['neon','wave'],'Терминал':['matrix','flicker'],'Лампочка-идея':['gold','pulse'],'Призрак':['ice','glitch'],
+  'Разделитель':['neon','flow'],'Заголовок-рамка':['aurora','flow'],'Чек-лист':['matrix','type'],'Стрелки':['ocean','flow']};
+const isAscii=it=>it?.type==='note'&&it.ff==='mono'&&it.nw;
+function applyAsc(t,it){const a=it.asc;if(!a)return;const G=ASC_G[a.g];
+  if(G){const cols=[...G.c,G.c[0]];t.classList.add('ag');t.style.setProperty('--ag',`linear-gradient(${a.dir==='v'?'180deg':'90deg'},${cols.join(',')})`);t.style.setProperty('--agc',G.c[1]||G.c[0])}
+  if(a.dir==='v')t.classList.add('vdir');
+  if(a.anim&&a.anim!=='none'){t.classList.add('an-'+a.anim);if(a.anim==='wave')t.innerHTML=t.innerHTML.replace(/<span class="ln"[^>]*>|<\/span>(?=<br>|$)/g,'').split(/<br\s*\/?>/i).map((l,i)=>`<span class="ln" style="--i:${i}">${l||' '}</span>`).join('<br>')}}
+function ascPop(a,its){closePops();const r=a.getBoundingClientRect();const it=its[0];
+  const apply=f=>{snap(its.map(x=>x.id),true);for(const x of its){x.asc={...(x.asc||{})};f(x.asc);if(!x.asc.g&&(!x.asc.anim||x.asc.anim==='none'))delete x.asc;stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(board());buildSel();render()};
+  const p=h('div',{className:'pop glass tpop'});
+  function render(){p.textContent='';const s=it.asc||{};
+    p.append(h('div',{className:'phd'},'Градиент'),h('div',{className:'agrid'},h('button',{className:'agsw'+(!s.g?' on':''),title:'Без цвета',onclick:()=>apply(x=>delete x.g)},'—'),
+      ...Object.entries(ASC_G).map(([k,g])=>{const b=h('button',{className:'agsw'+(s.g===k?' on':''),title:g.l,onclick:()=>apply(x=>x.g=k)});b.style.background=`linear-gradient(90deg,${g.c.join(',')})`;return b})),
+      h('div',{className:'tline'},h('span',{className:'muted tl'},'Направление'),h('button',{className:'chip'+(s.dir!=='v'?' on':''),onclick:()=>apply(x=>delete x.dir)},'↔ слева направо'),h('button',{className:'chip'+(s.dir==='v'?' on':''),onclick:()=>apply(x=>x.dir='v')},'↕ сверху вниз')),
+      h('div',{className:'phd'},'Анимация'),h('div',{className:'tline'},...Object.entries(ASC_A).map(([k,l])=>h('button',{className:'chip'+((s.anim||'none')===k?' on':''),onclick:()=>apply(x=>x.anim=k)},l))),
+      h('div',{className:'muted',style:'padding:6px 4px 0'},'Размер и шрифт — кнопка «Aa». При сильном отдалении анимации ставятся на паузу.'))}
+  render();document.body.append(p);posPop(p,r.left-140,r.bottom+8)}
+function addAsciiArt(text,x,y,fs,asc,html){const it=addAscii(text,x,y,fs);if(asc||html){if(html)it.html=html;if(asc)it.asc=asc;stamp(it);elOf(it.id)?.replaceWith(renderItem(it));touch(board())}return it}
+async function imageToAsciiColor(it,style='ramp',cols=90){const u=it.src||await imgURL(it.img);if(!u)return null;const im=new Image();im.crossOrigin='anonymous';im.src=u;await im.decode();
+  const c=it.crop||{x:0,y:0,w:1,h:1};const sw=im.naturalWidth*c.w,sh=im.naturalHeight*c.h;const W=cols,H=Math.max(2,Math.round(cols*sh/sw/2));
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');g.drawImage(im,im.naturalWidth*c.x,im.naturalHeight*c.y,sw,sh,0,0,W,H);const d=g.getImageData(0,0,W,H).data;
+  const ramp=style==='blocks'?' ░▒▓█':' .:-=+*#%@',dark=document.documentElement.dataset.theme!=='light';const rows=[],plain=[];
+  for(let y=0;y<H;y++){let html='',txt='',run='',runC=null;
+    for(let x=0;x<W;x++){const i=(y*W+x)*4,a=d[i+3]/255;let r=d[i],gg=d[i+1],b=d[i+2];const l=(.299*r+.587*gg+.114*b)/255;
+      let v=a<.08?0:dark?Math.max(.25,l)*a:Math.max(.25,1-l)*a;const ch=a<.08?' ':ramp[Math.min(ramp.length-1,Math.max(1,Math.floor(v*ramp.length)))];
+      const q=n=>Math.min(255,(n>>4)*17+8).toString(16).padStart(2,'0');const col=ch===' '?runC:'#'+q(r)+q(gg)+q(b);
+      if(col!==runC&&run){html+=runC?`<span style="color:${runC}">${esc(run)}</span>`:esc(run);run=''}runC=col;run+=ch;txt+=ch}
+    if(run)html+=runC?`<span style="color:${runC}">${esc(run)}</span>`:esc(run);rows.push(html.replace(/\s+$/,''));plain.push(txt.replace(/\s+$/,''))}
+  return{html:rows.join('<br>'),text:plain.join('\n')}}
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');

@@ -291,7 +291,7 @@ function placeEnd(n){const r=document.createRange();r.selectNodeContents(n);r.co
 function rerenderCard(id){const o=elOf(id),it=board().items[id];if(!o||!it)return;const n=renderItem(it);o.replaceWith(n);paintAll()}
 const OKTAG=new Set(['B','I','U','S','STRONG','EM','UL','OL','LI','BR','DIV','P','SPAN','CODE','STRIKE']);
 function clean(html){const d=new DOMParser().parseFromString('<div>'+(html||'')+'</div>','text/html').body.firstChild;
-  (function walk(n){for(const c of[...n.children]){walk(c);if(!OKTAG.has(c.tagName)){if(/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|IMG|SVG)$/.test(c.tagName))c.remove();else c.replaceWith(...c.childNodes)}else for(const a of[...c.attributes])c.removeAttribute(a.name)}})(d);return d.innerHTML}
+  (function walk(n){for(const c of[...n.children]){walk(c);if(!OKTAG.has(c.tagName)){if(/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|IMG|SVG)$/.test(c.tagName))c.remove();else c.replaceWith(...c.childNodes)}else for(const a of[...c.attributes]){if(c.tagName==='SPAN'&&a.name==='style'&&/^color:\s*#[0-9a-f]{3,8};?$/i.test(a.value.trim()))continue;c.removeAttribute(a.name)}}})(d);return d.innerHTML}
 const progLine=it=>{const p=it?progressOf(it):0;return h('div',{className:'pline'},h('div',{className:'bar'},h('div',{className:'fill',style:`width:${(p*100).toFixed(1)}%`})),h('span',{className:'pct'},Math.round(p*100)+'%'))};
 const ttlInput=(it,ph)=>h('input',{className:'ttl',value:it.title||'',placeholder:ph,oninput:e=>edit(it,{title:e.target.value})});
 function chips(o,onclick,done){const c=h('button',{className:'chips',title:'Срок и исполнитель',onmousedown:e=>e.preventDefault(),onclick:e=>{e.stopPropagation();onclick(e)}});
@@ -304,7 +304,7 @@ function fillBody(it,el,bd){bd.textContent='';const refill=()=>{fillBody(it,el,b
   switch(it.type){
   case'note':case'sticky':case'heading':{const rich=it.type==='note';
     const t=h('div',{className:'txt',contentEditable:rich?'true':'plaintext-only'});t.dataset.ph={note:'Текст заметки…',sticky:'Идея…',heading:'Заголовок'}[it.type];
-    if(rich)t.innerHTML=clean(it.html);else t.textContent=it.text||'';applyText(t,it);if(it.bare&&!it.html&&rich)t.dataset.ph='Текст';
+    if(rich)t.innerHTML=clean(it.html);else t.textContent=it.text||'';applyText(t,it);applyAsc(t,it);if(it.bare&&!it.html&&rich)t.dataset.ph='Текст';
     t.addEventListener('input',e=>{
       if(rich&&e.inputType==='insertText'&&/[\s ]$/.test(e.data||'')){const s=getSelection(),n=s.anchorNode;
         if(n&&n.nodeType===3&&/^[-*•][\s ]$/.test(n.textContent.slice(0,s.anchorOffset))&&(!n.previousSibling||n.previousSibling.nodeName==='BR')&&!n.parentElement.closest('li')){
@@ -614,6 +614,7 @@ function buildCtx(){const c=$('#ctx');c.textContent='';const B=board();if(!B)ret
   const its=selItems();if(!its.length){updateSelUI();return}const one=its.length===1?its[0]:null,T=one?.type;
   const setAll=(f)=>{snap(its.map(x=>x.id),true);for(const x of its){f(x);stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(B);buildSel();paintAll()};
   if(its.length>1&&its.every(x=>TXT_T.has(x.type)))add(ibtn('text','Текст: шрифт, размер, стиль',e=>textPop(e.currentTarget,its)),sep());
+  if(its.every(isAscii))add(h('button',{className:'cb wide',title:'Цвет, градиент и анимация ASCII',innerHTML:ic('palette',15)+'ASCII',onclick:e=>{e.stopPropagation();ascPop(e.currentTarget,its)}}),sep());
   if(T==='note'||T==='shape'||T==='sticky'||T==='heading'){const el=elOf(one.id);if(T==='note')add(ibtn('bold','Жирный',()=>fmt(el,'bold')),ibtn('list','Список',()=>fmt(el,'insertUnorderedList')));
     add(h('button',{className:'cb wide',title:'Шрифт, размер, жирный, курсив, выравнивание, цвет',innerHTML:'<b style="font-size:15px">Aa</b>',onmousedown:e=>e.preventDefault(),onclick:e=>{e.stopPropagation();textPop(e.currentTarget,its)}}),sep())}
   if(T==='lens')add(h('button',{className:'cb wide',innerHTML:ic('search',15)+'×'+(+(one.zoom||2.2)).toFixed(1),title:'Увеличение',onclick:e=>{const r=e.currentTarget.getBoundingClientRect();menu(r.left,r.bottom+6,[1.5,2,3,4,6].map(z=>({icon:'search',label:'×'+z,fn:()=>setAll(x=>x.zoom=z)})))}}),

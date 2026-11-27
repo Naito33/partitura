@@ -264,6 +264,23 @@ body.crt:after{content:'';position:fixed;inset:0;pointer-events:none;z-index:250
 [data-theme=term] #emptyHint{color:var(--mut)}
 #emptyHint .cur{display:inline-block;width:.6em;height:1.05em;background:currentColor;vertical-align:-2px;animation:cblink 1s steps(1) infinite}
 @media (max-width:600px){#emptyHint{font-size:9px}}
+.txt.ag{background-image:var(--ag);background-size:100% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
+.txt.ag .ln{background-image:var(--ag);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.txt.ag span[style*="color"]{-webkit-text-fill-color:currentColor}
+.txt.an-flow{background-size:200% 100%;animation:agFlowX 5s linear infinite}.txt.an-flow.vdir{background-size:100% 200%;animation-name:agFlowY}
+@keyframes agFlowX{to{background-position:200% 0}}@keyframes agFlowY{to{background-position:0 200%}}
+.txt.an-rainbow{animation:agHue 6s linear infinite}@keyframes agHue{to{filter:hue-rotate(360deg)}}
+.txt.an-pulse{animation:agPulse 2.6s ease-in-out infinite}@keyframes agPulse{50%{filter:brightness(1.35) drop-shadow(0 0 7px var(--agc,var(--acc)))}}
+.txt.an-glitch{animation:agGlitch 3s steps(1) infinite}
+@keyframes agGlitch{0%,90%,100%{transform:none;filter:none}91%{transform:translate(3px,-1px) skewX(6deg);filter:hue-rotate(90deg)}93%{transform:translate(-3px,1px);filter:hue-rotate(-70deg) brightness(1.4)}95%{transform:translate(1px,0) skewX(-4deg)}97%{transform:translate(-1px,-1px)}}
+.txt.an-flicker{animation:agFlick 4s steps(1) infinite}@keyframes agFlick{0%,100%{opacity:1}31%{opacity:.55}32%{opacity:1}64%{opacity:.7}65%{opacity:1}66%{opacity:.6}67%{opacity:1}}
+.txt.an-type{animation:agType 5s steps(36,end) infinite}@keyframes agType{0%{clip-path:inset(0 100% 0 0)}55%,92%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);opacity:0}}
+.txt.an-wave .ln{display:inline-block;animation:agWave 2.4s ease-in-out infinite;animation-delay:calc(var(--i,0) * -.14s)}@keyframes agWave{50%{transform:translateY(-5px)}}
+.lod .txt[class*=an-],.lod .txt.an-wave .ln,body.moving .txt[class*=an-]{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.txt[class*=an-],.txt.an-wave .ln{animation:none!important}}
+.agrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:4px 2px 6px}
+.agsw{height:28px;border-radius:6px;border:2px solid var(--line2);font-weight:700;color:var(--mut);transition:transform .15s}
+.agsw:hover{transform:scale(1.06)}.agsw.on{border-color:var(--tx);box-shadow:0 0 0 2px var(--acc)}
 .bi.sub .nm>div:first-child:before{content:'↳ ';color:var(--mut)}
 .bi .cb.caret{opacity:.85;transition:transform .2s var(--ease)}.bi .cb.caret:not(.open){transform:rotate(-90deg)}
 #crumbs{display:flex;align-items:center;gap:1px;min-width:0;overflow:hidden;flex-shrink:1}
