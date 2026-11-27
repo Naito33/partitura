@@ -1243,6 +1243,34 @@ document.addEventListener('keydown',e=>{if(e.code==='Backquote'&&!e.ctrlKey&&!e.
 (()=>{const host=$('#sCrt').closest('label');host.after(h('label',{className:'cbx'},h('input',{type:'checkbox',id:'sSfx',checked:localStorage.sfx==='1',onchange:e=>{localStorage.sfx=e.target.checked?'1':'0';sfx('ok')}}),' Звуки интерфейса в стиле 90-х'),
   h('label',{className:'cbx'},h('input',{type:'checkbox',id:'sJp',checked:jpOn(),onchange:e=>{localStorage.jp=e.target.checked?'1':'0';decorateJP()}}),' Японские подписи (タスク, 設定…)'))})();
 
+
+/* ================= скины HUD по референсам ================= */
+const BASE_COLORS=[...COLORS];
+const SKINS={orange:{l:'Оранж',d:'Индастриал-бирки: оранжевый, бумага, крупные цифры',pv:['#ff5a1f','#e9e7e2','#151515','#0d0d0d'],colors:['','#ff5a1f','#e9e7e2','#9a9a9a','#ff8a5c','#cfcac0','#ff3d00','#5a5a5a']},
+  retro:{l:'Ретро',d:'Киберпанк-карточки: терракота, песок, шалфей',pv:['#d0604f','#e3a45f','#7fa070','#a8a8a8'],colors:['','#e3a45f','#86a877','#93adc2','#d0604f','#b391c6','#df7d6f','#a3b8a1']},
+  crt:{l:'ЭЛТ',d:'Синий люминофор, пиксельный шрифт, свечение',pv:['#8fd3ff','#d9f2ff','#061019','#03060a'],colors:['','#8fd3ff','#7dffcf','#5aa9ff','#c49bff','#ff8fd6','#ff6b6b','#ffd37a']},
+  dash:{l:'Дашборд',d:'Спокойный тёмный: графит, бирюза, тонкий шрифт',pv:['#3ecf9b','#f0a35b','#1b1e20','#131516'],colors:['','#f0a35b','#3ecf9b','#5aa9ff','#e86f8a','#a78bfa','#ef5b5b','#2dd4bf']},
+  hud:{l:'Классика HUD',d:'Тонкие рамки и акцент на выбор',pv:['#ff8a1f','#ffd166','#0d0d0d','#070707'],colors:null}};
+function applySkin(re){const k=SKINS[localStorage.skin]?localStorage.skin:'orange';const term=document.documentElement.dataset.theme==='term';
+  document.documentElement.dataset.skin=k;const S=SKINS[k];
+  if(k==='hud')applyHud();else{const r=document.documentElement.style;r.setProperty('--hud',S.pv[0]);r.setProperty('--hud2',S.pv[1])}
+  const cols=term&&S.colors?S.colors:BASE_COLORS;COLORS.splice(0,COLORS.length,...cols);
+  document.body.classList.toggle('crt',term&&(localStorage.crt==='1'||k==='crt'&&localStorage.crt!=='0'));
+  const acc=$('.hudsw')?.parentElement;if(acc)acc.hidden=k!=='hud';
+  document.querySelectorAll('.skinsw button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
+  if(re&&board()){renderBoard();drawLinks();scheduleMinimap()}}
+if(!localStorage.skin)localStorage.skin='orange';
+{const _st=setTheme;setTheme=function(t){_st(t);applySkin(true)}}
+applySkin(false);
+(()=>{const bc=h('span',{id:'barcode',title:'EAN-13 // PARTITURA'});$('#hudclock')?.after(bc)})();
+(()=>{const host=$('.hudsw')?.parentElement||$('#sCrt').closest('label');const box=h('div',{},h('label',{},'Стиль темы HUD'),h('div',{className:'skinsw'},...Object.entries(SKINS).map(([k,s])=>{
+  const b=h('button',{type:'button',className:(localStorage.skin||'orange')===k?'on':'',onclick:()=>{localStorage.skin=k;if(document.documentElement.dataset.theme!=='term')setTheme('term');else applySkin(true);
+    box.querySelectorAll('.skinsw button').forEach(x=>x.classList.toggle('on',x===b));toast('Стиль: '+s.l)}},h('div',{className:'pv'},...s.pv.map(c=>h('i',{style:`background:${c}`}))),h('b',{},s.l),h('small',{},s.d));b.dataset.k=k;return b})));
+  host.before(box);applySkin(false)})();
+CMDS.skin='skin orange|retro|crt|dash|hud — стиль темы';
+{const _run=cliRun;cliRun=function(line){const[c,a]=line.trim().split(/\s+/);if(c?.toLowerCase()==='skin'){cliPrint(cliPs()+' '+line.trim(),'m');if(!SKINS[a]){cliPrint('skin '+Object.keys(SKINS).join('|'),'e');return}
+  localStorage.skin=a;if(document.documentElement.dataset.theme!=='term')setTheme('term');else applySkin(true);cliPrint('стиль: '+SKINS[a].l,'a');return}return _run(line)}}
+
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
