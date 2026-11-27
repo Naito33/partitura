@@ -114,44 +114,55 @@ async function importTldraw(d,name){const recs=d.records||[];const shapes=recs.f
   const pages=recs.filter(r=>r.typeName==='page').sort((a,b)=>a.index<b.index?-1:a.index>b.index?1:0);
   const assets=Object.fromEntries(recs.filter(r=>r.typeName==='asset').map(a=>[a.id,a]));const byId=Object.fromEntries(shapes.map(s=>[s.id,s]));
   const pageOf=s=>{let p=s,i=0;while(p&&!String(p.parentId).startsWith('page:')&&i++<50)p=byId[p.parentId];return p?.parentId};
-  const abs=s=>{let x=s.x,y=s.y,p=byId[s.parentId];while(p){x+=p.x;y+=p.y;p=byId[p.parentId]}return{x,y}};
+  const tf=s=>{const p=byId[s.parentId];if(!p)return{x:s.x,y:s.y,r:s.rotation||0};const P=tf(p),c=Math.cos(P.r),sn=Math.sin(P.r);return{x:P.x+s.x*c-s.y*sn,y:P.y+s.x*sn+s.y*c,r:P.r+(s.rotation||0)}};
+  const pt=(T,q)=>{const c=Math.cos(T.r),sn=Math.sin(T.r);return[T.x+q.x*c-q.y*sn,T.y+q.x*sn+q.y*c]};
+  const pos=(T,w,hh)=>{if(!T.r)return{x:T.x,y:T.y};const c=Math.cos(T.r),sn=Math.sin(T.r);return{x:T.x+w/2*c-hh/2*sn-w/2,y:T.y+w/2*sn+hh/2*c-hh/2,rot:+T.r.toFixed(4)}};
   let pids=pages.map(p=>p.id).filter(pid=>shapes.some(s=>pageOf(s)===pid));if(!pids.length)pids=[...new Set(shapes.map(pageOf))];
   const prev=cur;const root=createBoard(name||'Импорт из tldraw');const boardOf={[pids[0]]:root};
-  for(const pid of pids.slice(1)){const b=createBoard(pages.find(p=>p.id===pid)?.name||'Страница');b.parent=root.id;boardOf[pid]=b}
-  const map={},sb={},links=[],arrows=[];let n=0;const SZ={s:2,m:3.5,l:5,xl:8},FS={s:16,m:22,l:30,xl:42},GF={s:13,m:16,l:20,xl:26};
-  const add=(b,o,x,y,s)=>{cur=b.id;const it=mk(o,x,y);b.items[it.id]=it;n++;if(s){map[s.id]=it.id;sb[s.id]=b;const u=s.props?.url;if(u)links.push([it,u])}return it};
-  const draw=(b,pts,color,size,kind,s,extra={})=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pad=size*2+12;const x=Math.min(...xs)-pad,y=Math.min(...ys)-pad;
-    return add(b,{type:'draw',kind,color,size,w:Math.max(...xs)-x+pad,h:Math.max(...ys)-y+pad,pts:pts.map(p=>[+(p[0]-x).toFixed(1),+(p[1]-y).toFixed(1)]),...(extra.bend?{bend:[extra.bend[0]-x,extra.bend[1]-y]}:{})},x,y,s)};
-  for(const s of shapes){const b=boardOf[pageOf(s)]||root;const{x,y}=abs(s);const p=s.props||{};const sc=p.scale||1;
-    const text=(typeof p.text==='string'?p.text:richToText(p.richText)).trim();const col=TL_CARD[p.color]??0;const inkc=TL_INK[p.color]||'auto';
+  for(const pid of pids.slice(1)){const b=createBoard(pages.find(p=>p.id===pid)?.name||'Страница');b.parent=root.id;b.parentAt=now();boardOf[pid]=b}
+  const map={},sb={},links=[],arrows=[];let n=0;
+  const SZ={s:2,m:3.5,l:5,xl:10},FS={s:18,m:24,l:36,xl:44},LF={s:18,m:22,l:26,xl:32},FF={draw:'draw',sans:undefined,serif:'serif',mono:'mono'};
+  const TA={start:'left',middle:'center',end:'right','start-legacy':'left','middle-legacy':'center','end-legacy':'right',justify:'justify'},VA={start:'top',end:'bottom'};
+  const add=(b,o,T,w,hh,s)=>{const P=pos(T,w,hh);if(P.rot)o.rot=P.rot;cur=b.id;for(const k of Object.keys(o))if(o[k]===undefined)delete o[k];const it=mk(o,P.x,P.y);b.items[it.id]=it;n++;
+    if(s){map[s.id]=it.id;sb[s.id]=b;const u=s.props?.url;if(u)links.push([it,u,b])}return it};
+  const draw=(b,pts,color,size,kind,s,extra={})=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pad=size*2+12;const x=Math.min(...xs)-pad,y=Math.min(...ys)-pad;cur=b.id;
+    const it=mk({type:'draw',kind,color,size,w:Math.max(...xs)-x+pad,h:Math.max(...ys)-y+pad,pts:pts.map(p=>[+(p[0]-x).toFixed(1),+(p[1]-y).toFixed(1)]),...(extra.bend?{bend:[extra.bend[0]-x,extra.bend[1]-y]}:{})},x,y);
+    b.items[it.id]=it;n++;if(s){map[s.id]=it.id;sb[s.id]=b}return it};
+  for(const s of shapes){const b=boardOf[pageOf(s)]||root;const T=tf(s);const p=s.props||{};const sc=p.scale||1;
+    const text=(typeof p.text==='string'?p.text:richToText(p.richText)).replace(/\s+$/,'');const col=TL_CARD[p.color]??0;const inkc=TL_INK[p.color]||'auto';const ff=FF[p.font??'draw'];
     try{switch(s.type){
-      case'frame':add(b,{type:'frame',title:p.name||'',w:Math.round(p.w),h:Math.round(p.h)},x,y,s);break;
-      case'note':add(b,{type:'sticky',text,c:col||1,w:Math.round(200*sc),fs:p.size==='l'||p.size==='xl'?Math.round(FS[p.size]*.8):undefined},x,y,s);break;
-      case'text':{const fs=Math.round((FS[p.size]||22)*sc);const lines=text.split('\n');const est=Math.max(...lines.map(l=>l.length))*fs*.56+24;
-        add(b,{type:'note',bare:true,fs,tc:inkc,html:esc(text).replace(/\n/g,'<br>'),w:Math.round(p.autoSize===false&&p.w?p.w*sc:Math.max(60,est))},x,y,s);break}
-      case'geo':add(b,{type:'shape',kind:TL_GEO[p.geo]||'rect',text,c:col,nofill:p.fill==='none',fs:GF[p.size],w:Math.max(30,Math.round(p.w||120)),h:Math.max(24,Math.round((p.h||80)+(p.growY||0)))},x,y,s);break;
-      case'draw':case'highlight':{const pts=[];for(const seg of p.segments||[])if(Array.isArray(seg.points))for(const q of seg.points)pts.push([x+q.x*sc,y+q.y*sc]);
-        if(pts.length>1)draw(b,rdp(pts,.5),inkc,(SZ[p.size]||3.5)*(s.type==='highlight'?3:1),'pen',s);break}
-      case'line':{const pts=Object.values(p.points||{}).sort((a,c)=>a.index<c.index?-1:1).map(q=>[x+q.x,y+q.y]);if(pts.length>1)draw(b,pts,inkc,SZ[p.size]||3.5,'line',s);break}
-      case'arrow':arrows.push({s,b,x,y,p,inkc,text});break;
-      case'image':{const a=assets[p.assetId];const src=a?.props?.src;if(!src)break;const w=Math.round((p.w||300)),ar=(p.h||300)/(p.w||300);
-        if(src.startsWith('data:')){const st=await storeImage(await(await fetch(src)).blob());add(b,{type:'image',bare:true,img:st.img,ar,w,cap:''},x,y,s)}
-        else add(b,{type:'image',bare:true,src,ar,w,cap:''},x,y,s);break}
-      case'embed':case'bookmark':{if(!p.url)break;const e=embedOf(p.url);(e?add(b,{type:'embed',url:p.url,svc:e.svc,src:e.src,w:Math.round(p.w||e.w),h:Math.round(p.h||e.h)},x,y,s):add(b,{type:'link',url:p.url,label:p.title||''},x,y,s));break}
+      case'frame':add(b,{type:'frame',title:p.name||'',w:Math.round(p.w),h:Math.round(p.h)},T,p.w,p.h,s);break;
+      case'note':{const w=200*sc,hh=(200+(p.growY||0))*sc;add(b,{type:'sticky',text,c:col||1,w:Math.round(w),fs:Math.round((LF[p.size]||22)*sc),ff,ta:TA[p.align]==='center'?'center':TA[p.align]==='right'?'right':undefined,lh:1.35},T,w,hh,s);break}
+      case'text':{const fs=Math.round((FS[p.size]||24)*sc);const lines=text.split('\n');const auto=p.autoSize!==false;
+        const w=p.w?p.w*sc:Math.max(...lines.map(l=>l.length))*fs*.56+8,hh=lines.length*fs*1.35;
+        add(b,{type:'note',bare:true,tight:true,fs,ff,lh:1.35,tc:inkc,ta:TA[p.textAlign||p.align]==='left'?undefined:TA[p.textAlign||p.align],nw:auto?1:undefined,html:esc(text).replace(/\n/g,'<br>'),w:Math.ceil(w+(auto?6:0))},T,w,hh,s);break}
+      case'geo':{const w=Math.max(20,p.w||120),hh=Math.max(16,(p.h||80)+(p.growY||0));
+        add(b,{type:'shape',kind:TL_GEO[p.geo]||'rect',text,c:col,nofill:p.fill==='none',fs:Math.round((LF[p.size]||22)*sc),ff,ta:{start:'left',end:'right'}[p.align],va:VA[p.verticalAlign],w:Math.round(w),h:Math.round(hh)},T,w,hh,s);break}
+      case'draw':case'highlight':{const pts=[];for(const seg of p.segments||[])if(Array.isArray(seg.points))for(const q of seg.points)pts.push(pt(T,{x:q.x*sc,y:q.y*sc}));
+        if(pts.length>1)draw(b,rdp(pts,.5),inkc,(SZ[p.size]||3.5)*(s.type==='highlight'?3:1)*sc,'pen',s);break}
+      case'line':{const pts=Object.values(p.points||{}).sort((a,c)=>a.index<c.index?-1:1).map(q=>pt(T,q));if(pts.length>1)draw(b,pts,inkc,SZ[p.size]||3.5,'line',s);break}
+      case'arrow':arrows.push({s,b,T,p,inkc,text});break;
+      case'image':{const a=assets[p.assetId];const src=a?.props?.src;if(!src)break;const w=p.w||300,hh=p.h||300;const cr=p.crop;let crop,ar=hh/w;
+        if(cr?.topLeft&&cr?.bottomRight){const cw=cr.bottomRight.x-cr.topLeft.x,ch=cr.bottomRight.y-cr.topLeft.y;if(cw>0&&ch>0&&(cw<.999||ch<.999)){crop={x:cr.topLeft.x,y:cr.topLeft.y,w:cw,h:ch};ar=(hh/w)*(cw/ch)}}
+        const base={type:'image',bare:true,ar,w:Math.round(w),cap:'',crop};if(src.startsWith('data:')){const st=await storeImage(await(await fetch(src)).blob());base.img=st.img}else base.src=src;add(b,base,T,w,hh,s);break}
+      case'embed':case'bookmark':{if(!p.url)break;const e=embedOf(p.url);const w=p.w||e?.w||300,hh=p.h||e?.h||120;(e?add(b,{type:'embed',url:p.url,svc:e.svc,src:e.src,w:Math.round(w),h:Math.round(hh)},T,w,hh,s):add(b,{type:'link',url:p.url,label:p.title||''},T,w,hh,s));break}
       case'group':break;
-      default:if(text)add(b,{type:'note',bare:true,html:esc(text),w:260},x,y,s)}}catch(err){console.warn('tldraw shape',s.type,err)}}
+      default:if(text)add(b,{type:'note',bare:true,html:esc(text),w:260},T,260,40,s)}}catch(err){console.warn('tldraw shape',s.type,err)}}
   const binds=recs.filter(r=>r.typeName==='binding'&&r.type==='arrow');
-  for(const{s,b,x,y,p,inkc,text}of arrows){const end=t=>{const bd=binds.find(r=>r.fromId===s.id&&r.props?.terminal===t);const old=p[t];return bd?.toId||(old?.type==='binding'?old.boundShapeId:null)};
-    const P0=p.start&&p.start.x!=null?[x+p.start.x,y+p.start.y]:null,P1=p.end&&p.end.x!=null?[x+p.end.x,y+p.end.y]:null;
+  for(const{s,b,T,p,inkc,text}of arrows){const end=t=>{const bd=binds.find(r=>r.fromId===s.id&&r.props?.terminal===t);const old=p[t];return bd?.toId||(old?.type==='binding'?old.boundShapeId:null)};
+    const P0=p.start&&p.start.x!=null?pt(T,p.start):null,P1=p.end&&p.end.x!=null?pt(T,p.end):null;
     let a=map[end('start')],z=map[end('end')];const hs=p.arrowheadStart&&p.arrowheadStart!=='none',he=(p.arrowheadEnd??'arrow')!=='none';
     let bendV=null;if(p.bend&&P0&&P1){const dx=P1[0]-P0[0],dy=P1[1]-P0[1],L=Math.hypot(dx,dy)||1;bendV={x:Math.round(-p.bend*dy/L),y:Math.round(p.bend*dx/L)}}
     if(a&&z&&a!==z&&sb[end('start')]===sb[end('end')]){if(hs&&!he)[a,z]=[z,a];const c={id:uid(),type:'_conn',from:a,to:z,style:'arrow',color:inkc,at:now(),head:hs&&he?'both':hs||he?'end':'none'};
       if(bendV)c.bend=bendV;if(text)c.label=text;if(p.dash==='dashed'||p.dash==='dotted')c.dash=true;b.items[c.id]=c;n++}
     else if(P0&&P1){const mid=[(P0[0]+P1[0])/2+(bendV?.x||0),(P0[1]+P1[1])/2+(bendV?.y||0)];draw(b,[P0,P1],inkc,SZ[p.size]||3.5,he?'arrow':'line',s,{bend:bendV?mid:null})}}
-  for(const[it,u]of links){const r=tlRefs(u);const sid=r.shapes.find(k=>map[k]);const pid=r.pages.find(k=>boardOf[k]);
-    it.link=sid?`board:${sb[sid].id}#${map[sid]}`:pid?'board:'+boardOf[pid].id:/^https?:/i.test(u)?u:undefined;if(!it.link)delete it.link}
+  const edges=new Map();
+  for(const[it,u,src]of links){const r=tlRefs(u);const sid=r.shapes.find(k=>map[k]);const pid=r.pages.find(k=>boardOf[k]);
+    const tgt=sid?sb[sid]:pid?boardOf[pid]:null;it.link=sid?`board:${sb[sid].id}#${map[sid]}`:pid?'board:'+boardOf[pid].id:/^https?:/i.test(u)?u:undefined;if(!it.link)delete it.link;
+    if(tgt&&tgt!==src){if(!edges.has(src.id))edges.set(src.id,[]);edges.get(src.id).push(tgt)}}
+  const seen=new Set([root.id]),q=[root];while(q.length){const b=q.shift();for(const t of edges.get(b.id)||[])if(!seen.has(t.id)){seen.add(t.id);t.parent=b.id;t.parentAt=now();q.push(t)}}
   cur=prev;const bs=[...new Set(Object.values(boardOf))];for(const b of bs)touch(b);openBoard(root.id);
-  toast(`Импортировано из tldraw: ${n} объектов`+(bs.length>1?`, ${bs.length} ${plural(bs.length,'доска','доски','досок')} (страницы стали вложенными досками)`:''))}
+  toast(`Импортировано из tldraw: ${n} объектов`+(bs.length>1?`, ${bs.length} ${plural(bs.length,'доска','доски','досок')} — поддоски выстроены по ссылкам`:''))}
 
 /* ================= анимации ================= */
 const CONF=['#7c6cff','#22d3ee','#34d399','#fbbf24','#f472b6','#f87171'];
@@ -180,7 +191,7 @@ function shapeSvg(it){const col=COLORS[it.c]||'#8b90a0';const s=document.createE
   s.innerHTML=`<g style="fill:${it.nofill?'transparent':`color-mix(in srgb,${col} 24%,var(--card))`};stroke:${col};stroke-width:2;stroke-linejoin:round">${shapePath(it.kind||'round',it.w,it.h)}</g>`;return s}
 function refreshShape(el,it){el.querySelector('svg.shp')?.replaceWith(shapeSvg(it))}
 function fillShape(it,el,bd){el.querySelector('svg.shp')?.remove();el.prepend(shapeSvg(it));
-  const t=h('div',{className:'txt',contentEditable:'plaintext-only'});t.dataset.ph=it.kind==='mind'?'Идея':'';t.textContent=it.text||'';if(it.fs)t.style.fontSize=it.fs+'px';
+  const t=h('div',{className:'txt',contentEditable:'plaintext-only'});t.dataset.ph=it.kind==='mind'?'Идея':'';t.textContent=it.text||'';applyText(t,it);if(it.va)bd.style.alignItems={top:'flex-start',bottom:'flex-end'}[it.va]||'';
   t.addEventListener('input',()=>edit(it,{text:t.textContent}));
   t.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();mindChild(it,e.shiftKey?'sib':'child')}else if(e.key==='Enter'&&!e.shiftKey&&it.kind==='mind'){e.preventDefault();mindChild(it,'sib')}});
   bd.append(t)}
@@ -260,7 +271,7 @@ function diagramMenu(btn){const r=btn.getBoundingClientRect();menu(r.left,r.top-
   {head:'Сортировка'},{icon:'check',label:'Сортировка по важности',sub:'Зоны «Необходимо», «Менее важно», «Не нужно»',fn:arrangeZones},
   {head:'Планирование'},{icon:'gantt',label:'Таймлайн задач (диаграмма Ганта)',sub:'Из задач со сроками',fn:()=>addItem({type:'gantt',noFocus:true},...spotNear(720))}],true)}
 function linkPop(anchor,its){closePops();const r=anchor.getBoundingClientRect();const it=its[0];const inp=h('input',{placeholder:'https://…',value:it.link&&!it.link.startsWith('board:')?it.link:''});
-  const set=v=>{const B=board();snap(its.map(x=>x.id),true);for(const x of its){if(v)x.link=v;else delete x.link;stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(B);closePops();buildSel();drawLinks()};
+  const set=v=>{const B=board();snap(its.map(x=>x.id),true);if(v?.startsWith('board:'))adopt(v.slice(6).split('#')[0],cur);for(const x of its){if(v)x.link=v;else delete x.link;if(x.type==='button'&&!x.text&&v?.startsWith('board:'))x.text=boards[v.slice(6).split('#')[0]]?.title||'';stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(B);closePops();buildSel();drawLinks()};
   const p=h('div',{className:'pop glass',style:'width:min(340px,94vw);padding:12px'},h('div',{className:'phd'},'Ссылка на сайт'),
     h('div',{className:'inrow'},inp,h('button',{className:'btn pri sm',onclick:()=>{const v=inp.value.trim();if(!/^https?:\/\//i.test(v))return toast('Нужна ссылка, начинающаяся с https://');set(v)}},'OK')),
     h('div',{className:'phd'},'Или на доску'),...Object.values(boards).filter(b=>!b.deleted&&b.id!==cur).map(b=>h('button',{className:'mi',onclick:()=>set('board:'+b.id),innerHTML:ic('menu',15)+'<span>'+esc(b.title||'Без названия')+'</span>'})),
@@ -516,12 +527,12 @@ function showCursor(pid,name,m){let c=RT.curs[pid];if(m.b!==cur){if(c)c.el.style
 function rtCursorsClear(){for(const c of Object.values(RT.curs))c.el.style.opacity=0}
 
 /* ================= настройки, импорт/экспорт, верхняя панель ================= */
-function openSettings(){$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
+function openSettings(){$('#sPlate').checked=localStorage.imgPlate==='1';$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
   const a=aiCfg();$('#sAiKey').value=a.key||'';$('#sAiModel').value=a.model||'claude-opus-5-5';$('#setMsg').textContent='';$('#settings').showModal()}
 $('#sClose').onclick=()=>$('#settings').close();
 $('#sOff').onclick=()=>{cfg={};localStorage.cfg='{}';rtStop();setSync('off');$('#settings').close();toast('Синхронизация отключена')};
 $('#sSave').onclick=async()=>{const name=$('#sName').value.trim();if(name!==me()){localStorage.myName=name;updatePeople();paintMeta()}
-  localStorage.kinds=$('#sKinds').checked?'1':'0';document.body.classList.toggle('nokinds',localStorage.kinds==='0');
+  localStorage.imgPlate=$('#sPlate').checked?'1':'0';localStorage.kinds=$('#sKinds').checked?'1':'0';document.body.classList.toggle('nokinds',localStorage.kinds==='0');
   localStorage.ai=JSON.stringify({key:$('#sAiKey').value.trim(),model:$('#sAiModel').value});
   const lv=$('#sLive').checked;localStorage.live=lv?'1':'0';if(!lv)rtStop();
   const c={owner:$('#sOwner').value.trim(),repo:$('#sRepo').value.trim(),token:$('#sToken').value.trim()};const m=$('#setMsg');
@@ -550,7 +561,8 @@ $('#tplX').onclick=()=>$('#tpl').close();
 $('#newBoard').onclick=()=>{closeDrawer();showTemplates()};
 $('#openSet').onclick=()=>{closeDrawer();openSettings()};
 $('#menuBtn').onclick=openDrawer;$('#scrim').onclick=closeDrawer;
-$('#backBtn').innerHTML=ic('back');$('#backBtn').onclick=()=>{const id=navStack.pop();if(id&&boards[id])openBoard(id);$('#backBtn').hidden=!navStack.length};
+$('#backBtn').innerHTML=ic('back');$('#treeBtn').innerHTML=ic('tree');$('#treeBtn').onclick=()=>wins.tree?closeWin('tree'):openWin('tree','Структура досок',renderTree);
+$('#subsBtn').onclick=()=>{localStorage.hideSubs=localStorage.hideSubs==='1'?'0':'1';renderBoardList()};$('#backBtn').onclick=()=>{const id=navStack.pop();if(id&&boards[id])openBoard(id);$('#backBtn').hidden=!navStack.length};
 $('#searchBtn').onclick=openSearch;$('#tasksBtn').onclick=()=>wins.tasks?closeWin('tasks'):openWin('tasks','Задачи',renderTasks);
 $('#actBtn').onclick=()=>wins.activity?closeWin('activity'):openWin('activity','Активность',renderActivity);
 $('#themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
@@ -647,6 +659,128 @@ function arrangeZones(){const B=board();batch(()=>{const fresh=!zonesOf(B).lengt
   toast(cards.length?'Разложено карточек: '+cards.length+' · перетаскивайте между зонами':fresh?'Зоны готовы — перетаскивайте в них карточки или жмите 1, 2, 3 на выделенных':'Выделите карточки или отметьте важность клавишами 1, 2, 3')})}
 function toggleNope(){const on=!document.body.classList.contains('hide-nope');document.body.classList.toggle('hide-nope',on);localStorage.hideNope=on?'1':'0';toast(on?'Карточки «Не нужно» скрыты':'Карточки «Не нужно» снова видны')}
 document.body.classList.toggle('nokinds',localStorage.kinds==='0');document.body.classList.toggle('hide-nope',localStorage.hideNope==='1');
+
+
+/* ================= шрифты и форматирование текста ================= */
+const FONTS={sys:{l:'Обычный',css:''},draw:{l:'Рукописный',css:'"Shantell Sans","Segoe Print","Comic Sans MS",cursive',g:'Shantell+Sans:ital,wght@0,300..800;1,300..800'},
+  serif:{l:'С засечками',css:'"PT Serif",Georgia,"Times New Roman",serif',g:'PT+Serif:ital,wght@0,400;0,700;1,400;1,700'},mono:{l:'Моноширинный',css:'"JetBrains Mono","Cascadia Code",Consolas,monospace',g:'JetBrains+Mono:ital,wght@0,400;0,700;1,400'},
+  round:{l:'Округлый',css:'Nunito,"Segoe UI",sans-serif',g:'Nunito:ital,wght@0,400;0,800;1,400;1,800'},accent:{l:'Акцентный',css:'Unbounded,"Segoe UI",sans-serif',g:'Unbounded:wght@400;800'},
+  cond:{l:'Узкий',css:'Oswald,"Arial Narrow",sans-serif',g:'Oswald:wght@400;600'},hand:{l:'Каллиграфия',css:'"Marck Script","Segoe Script",cursive',g:'Marck+Script'}};
+const fontsLoaded=new Set();
+function ensureFont(k){const f=FONTS[k];if(!f?.g||fontsLoaded.has(k))return;fontsLoaded.add(k);document.head.append(h('link',{rel:'stylesheet',href:`https://fonts.googleapis.com/css2?family=${f.g}&display=swap`}))}
+function applyText(t,it){const s=t.style;if(it.ff&&FONTS[it.ff]){ensureFont(it.ff);s.fontFamily=FONTS[it.ff].css}if(it.fs)s.fontSize=it.fs+'px';if(it.fw)s.fontWeight='750';if(it.fi)s.fontStyle='italic';
+  const dec=[it.fu&&'underline',it.fst&&'line-through'].filter(Boolean).join(' ');if(dec)s.textDecoration=dec;if(it.ta)s.textAlign=it.ta;if(it.tc&&it.tc!=='auto')s.color=it.tc;if(it.lh)s.lineHeight=it.lh;if(it.nw)s.whiteSpace='pre'}
+const TXT_T=new Set(['note','sticky','heading','shape']);
+function textPop(a,its){closePops();const r=a.getBoundingClientRect();const card=elOf(its[0].id);
+  const sel=()=>{const s=getSelection();return its[0].type==='note'&&s&&!s.isCollapsed&&card?.contains(s.anchorNode)?s:null};
+  const apply=f=>{snap(its.map(x=>x.id),true);for(const x of its){f(x);for(const k of Object.keys(x))if(x[k]===undefined)delete x[k];stamp(x);const el=elOf(x.id);const t=el?.querySelector('.txt');if(t){t.removeAttribute('style');applyText(t,x)}if(x.type==='shape'){refreshShape(el,x);const bd=el.querySelector('.bd');if(bd)bd.style.alignItems={top:'flex-start',bottom:'flex-end'}[x.va]||''}}
+    touch(board());updateSelUI();drawLinks();render()};
+  const inline=(cmd,val)=>{document.execCommand('styleWithCSS',false,true);document.execCommand(cmd,false,val);const t=card.querySelector('.txt');edit(its[0],{html:t.innerHTML})};
+  const B=(icon,title,on,fn)=>h('button',{className:'cb'+(on?' on':''),title,innerHTML:ic(icon,16),onmousedown:e=>e.preventDefault(),onclick:fn});
+  const chip=(label,on,fn)=>h('button',{className:'chip'+(on?' on':''),onmousedown:e=>e.preventDefault(),onclick:fn},label);
+  const p=h('div',{className:'pop glass tpop'});
+  function render(){p.textContent='';const it=its[0];const fs=it.fs||(it.type==='sticky'?17:it.type==='heading'?34:15);
+    p.append(h('div',{className:'phd'},'Шрифт'),h('div',{className:'fonts'},...Object.entries(FONTS).map(([k,f])=>{ensureFont(k);const b=h('button',{className:'fbtn'+((it.ff||'sys')===k?' on':''),onmousedown:e=>e.preventDefault(),onclick:()=>apply(x=>x.ff=k==='sys'?undefined:k)},f.l);if(f.css)b.style.fontFamily=f.css;return b})),
+      h('div',{className:'phd'},'Размер'),h('div',{className:'tline'},B('minus','Меньше',0,()=>apply(x=>x.fs=Math.max(8,(x.fs||fs)-2))),h('span',{className:'fsv'},fs+' px'),B('plus','Больше',0,()=>apply(x=>x.fs=Math.min(240,(x.fs||fs)+2))),
+        ...[12,16,22,30,44,64,96].map(v=>chip(v,fs===v,()=>apply(x=>x.fs=v)))),
+      h('div',{className:'phd'},'Стиль и выравнивание'),h('div',{className:'tline'},
+        B('bold','Жирный',it.fw,()=>sel()?inline('bold'):apply(x=>x.fw=x.fw?undefined:1)),B('italic','Курсив',it.fi,()=>sel()?inline('italic'):apply(x=>x.fi=x.fi?undefined:1)),
+        B('underline','Подчёркнутый',it.fu,()=>sel()?inline('underline'):apply(x=>x.fu=x.fu?undefined:1)),B('strike','Зачёркнутый',it.fst,()=>sel()?inline('strikeThrough'):apply(x=>x.fst=x.fst?undefined:1)),h('span',{className:'vs'}),
+        ...[['al','left','По левому краю'],['ac','center','По центру'],['ar','right','По правому краю'],['aj','justify','По ширине']].map(([i,v,t])=>B(i,t,(it.ta||(it.type==='shape'?'center':'left'))===v,()=>apply(x=>x.ta=v)))),
+      h('div',{className:'tline'},h('span',{className:'muted tl'},'Цвет'),...INKS.map(c=>{const b=h('button',{className:'sw2'+((it.tc||'auto')===c?' on':''),title:c==='auto'?'Как у темы':c,onmousedown:e=>e.preventDefault(),
+        onclick:()=>sel()?inline('foreColor',c==='auto'?getComputedStyle(card).color:c):apply(x=>x.tc=c==='auto'?undefined:c)});b.style.background=c==='auto'?'var(--tx)':c;return b}),
+        h('label',{className:'sw2 cp',title:'Любой цвет',onmousedown:e=>e.stopPropagation()},h('input',{type:'color',className:'cpick',onchange:e=>sel()?inline('foreColor',e.target.value):apply(x=>x.tc=e.target.value)}))),
+      h('div',{className:'tline'},h('span',{className:'muted tl'},'Строки'),...[[1.1,'Плотно'],[undefined,'Обычно'],[1.6,'Свободно']].map(([v,l])=>chip(l,it.lh===v,()=>apply(x=>x.lh=v)))));
+    if(it.type==='shape')p.append(h('div',{className:'tline'},h('span',{className:'muted tl'},'Высота'),...[['top','Сверху'],[undefined,'По центру'],['bottom','Снизу']].map(([v,l])=>chip(l,it.va===v,()=>apply(x=>x.va=v)))));
+    if(it.type==='note')p.append(h('div',{className:'muted',style:'padding:6px 4px 0;line-height:1.35'},sel()?'Жирный, курсив, подчёркивание и цвет применятся к выделенному фрагменту':'Выделите часть текста — и стиль применится только к ней'))}
+  render();document.body.append(p);posPop(p,r.left-140,r.bottom+8)}
+
+/* ================= обрезка картинок ================= */
+function startCrop(it){const el=elOf(it.id);if(!el||el.classList.contains('cropping'))return;closePops();const bd=el.querySelector('.bd');let c={...(it.crop||{x:0,y:0,w:1,h:1})};
+  el.classList.add('cropping');const box=h('div',{className:'imw'});box.style.aspectRatio=String(1/(it.ar||1));
+  const im=h('img',{className:'im',draggable:false,alt:''});(it.src?Promise.resolve(it.src):imgURL(it.img)).then(u=>{if(u)im.src=u});
+  const cb=h('div',{className:'cropbox'},...['nw','ne','se','sw','n','e','s','w'].map(d=>{const x=h('div',{className:'crh'});x.dataset.d=d;return x}));box.append(im,cb);
+  const pos=()=>Object.assign(cb.style,{left:c.x*100+'%',top:c.y*100+'%',width:c.w*100+'%',height:c.h*100+'%'});pos();
+  const finish=ok=>{el.classList.remove('cropping');if(ok){const full=c.w>.995&&c.h>.995,oc=it.crop||{x:0,y:0,w:1,h:1},ow=it.w;
+      edit(it,()=>{if(full)delete it.crop;else it.crop={x:+c.x.toFixed(4),y:+c.y.toFixed(4),w:+c.w.toFixed(4),h:+c.h.toFixed(4)};it.w=Math.max(40,Math.round(ow*(c.w/oc.w)))})}
+    rerenderCard(it.id);buildSel()};
+  const bar=h('div',{className:'cropbar'},h('button',{className:'btn sm',onclick:e=>{e.stopPropagation();c={x:0,y:0,w:1,h:1};pos()}},'Сбросить'),
+    h('button',{className:'btn sm',onclick:e=>{e.stopPropagation();finish(false)}},'Отмена'),h('button',{className:'btn pri sm',onclick:e=>{e.stopPropagation();finish(true)}},'Готово'));
+  bd.replaceChildren(box,bar);
+  cb.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const d=e.target.dataset.d||'move',R=box.getBoundingClientRect(),s={...c},sx=e.clientX,sy=e.clientY;
+    beginOp(e.pointerId,ev=>{const dx=(ev.clientX-sx)/R.width,dy=(ev.clientY-sy)/R.height;let{x,y,w,h:hh}=s;
+      if(d==='move'){x=clamp(s.x+dx,0,1-s.w);y=clamp(s.y+dy,0,1-s.h)}
+      else{if(d.includes('w')){x=clamp(s.x+dx,0,s.x+s.w-.04);w=s.x+s.w-x}if(d.includes('e'))w=clamp(s.w+dx,.04,1-s.x);if(d.includes('n')){y=clamp(s.y+dy,0,s.y+s.h-.04);hh=s.y+s.h-y}if(d.includes('s'))hh=clamp(s.h+dy,.04,1-s.y)}
+      c={x,y,w,h:hh};pos()},()=>{},()=>{})});
+  toast('Тяните рамку и её углы · «Готово» — сохранить')}
+
+/* ================= лупа с «рыбьим глазом» ================= */
+const fishMaps={};
+function fishMap(f){const key=f.toFixed(2);if(fishMaps[key])return fishMaps[key];const N=200,cv=document.createElement('canvas');cv.width=cv.height=N;const g=cv.getContext('2d'),im=g.createImageData(N,N),pw=1+f*1.8;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const dx=(x+.5)/N*2-1,dy=(y+.5)/N*2-1,r=Math.hypot(dx,dy);let ox=0,oy=0;if(r<1&&r>0){const k=(Math.pow(r,pw)-r)/r;ox=dx*k;oy=dy*k}
+    const i=(y*N+x)*4;im.data[i]=Math.round(clamp(128+ox*127,0,255));im.data[i+1]=Math.round(clamp(128+oy*127,0,255));im.data[i+2]=128;im.data[i+3]=255}
+  g.putImageData(im,0,0);return fishMaps[key]=cv.toDataURL()}
+function fillLens(it,el){el.replaceChildren();const id='fe'+it.id,W=it.w,f=it.fish??.6;
+  const s=document.createElementNS(NS,'svg');s.setAttribute('width','0');s.setAttribute('height','0');s.style.position='absolute';
+  s.innerHTML=`<filter id="${id}" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feImage href="${fishMap(f)}" x="0" y="0" width="${W}" height="${W}" preserveAspectRatio="none" result="m"/><feDisplacementMap in="SourceGraphic" in2="m" scale="${W}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+  const inner=h('div',{className:'lens-in'},h('div',{className:'lens-w'}));if(f>0)inner.style.filter=`url(#${id})`;
+  el.append(s,inner,h('div',{className:'lens-rim'}),h('div',{className:'lens-lbl'},'×'+(+(it.zoom||2.2)).toFixed(1)));setTimeout(()=>updateLens(it,el),0)}
+function updateLens(it,el){el=el||elOf(it.id);const wr=el?.querySelector('.lens-w');if(!wr)return;const k=it.zoom||2.2,r=it.w/2,cx=it.x+r,cy=it.y+r,R=r/k+60;
+  const frag=document.createDocumentFragment();const s1=svg.cloneNode(true),s2=ropesSvg.cloneNode(true);for(const x of[s1,s2]){x.removeAttribute('id');x.classList.add('lsvg')}frag.append(s1);
+  for(const c of cardsEl.children){if(c===el||c.classList.contains('t-lens'))continue;const L=c.offsetLeft,T=c.offsetTop;if(L>cx+R||L+c.offsetWidth<cx-R||T>cy+R||T+c.offsetHeight<cy-R)continue;
+    const cl=c.cloneNode(true);cl.removeAttribute('data-id');cl.classList.remove('sel','enter','lift','leave');cl.style.visibility='';
+    for(const x of cl.querySelectorAll('[data-id],[id]')){x.removeAttribute('data-id');x.removeAttribute('id')}for(const im of cl.querySelectorAll('img'))im.removeAttribute('loading');for(const fr of cl.querySelectorAll('iframe'))fr.replaceWith(h('div',{style:'flex:1;background:#000;border-radius:10px'}));frag.append(cl)}
+  frag.append(s2);wr.replaceChildren(frag);wr.style.transform=`translate(${r-cx*k}px,${r-cy*k}px) scale(${k})`;
+  const inn=el.querySelector('.lens-in');inn.style.backgroundSize=`${24*k}px ${24*k}px`;inn.style.backgroundPosition=`${r-cx*k}px ${r-cy*k}px`}
+let lensT=0;function lensTick(){const b=board();if(!b||lensT)return;lensT=setTimeout(()=>{lensT=0;for(const it of live(b))if(it.type==='lens')updateLens(it)},90)}
+
+/* ================= кнопки-ссылки ================= */
+function fillButton(it,el){const col=COLORS[it.c]||'#7c6cff';const tgt=it.link?linkLabel(it.link):'Выберите, куда ведёт';
+  const b=h('div',{className:'bt',style:`--bc:${col}`,title:'Нажмите — перейти · тяните — переместить · правый клик — изменить'},h('span',{className:'btx'},it.text||(it.link?linkLabel(it.link).replace(/^→ /,''):'Кнопка')),h('span',{innerHTML:ic(it.link?.startsWith('board:')?'right':'ext',16)}));
+  const t=h('div',{className:'btx2'});applyText(t,it);b.firstChild.style.cssText=t.style.cssText;el.append(b,h('div',{className:'bsub'},tgt))}
+function addButton(at){const x=at?.x,y=at?.y;const it=addItem({type:'button',text:'',noFocus:true},x,y);setTimeout(()=>{const el=elOf(it.id);if(el)linkPop(el,[it])},60)}
+
+/* ================= поворот, замок, выравнивание ================= */
+function startRotate(e,it){e.preventDefault();e.stopPropagation();if(it.locked)return;const el=elOf(it.id);const r=itemBox(it),c={x:r.x+r.w/2,y:r.y+r.h/2};let moved=false;
+  beginOp(e.pointerId,ev=>{const p=toWorld(ev.clientX,ev.clientY);let a=Math.atan2(p.y-c.y,p.x-c.x)+Math.PI/2;a=Math.atan2(Math.sin(a),Math.cos(a));
+    if(!moved){moved=true;snap([it.id],true);document.body.classList.add('dragging')}
+    if(ev.shiftKey)a=Math.round(a/(Math.PI/12))*Math.PI/12;else if(Math.abs(a)<.06)a=0;
+    if(a)it.rot=+a.toFixed(4);else delete it.rot;place(el,it);updateSelUI();drawLinks();lensTick()},
+  ()=>{document.body.classList.remove('dragging');if(moved){stamp(it);touch(board())}},()=>document.body.classList.remove('dragging'))}
+function alignSel(mode){const its=selItems().filter(i=>!i.locked&&i.type!=='pin');if(its.length<2)return;const bs=its.map(i=>({i,r:itemBox(i)})),R=bounds(its);
+  const old=new Map(its.map(i=>[i.id,elOf(i.id)?.getBoundingClientRect()]));snap(its.map(i=>i.id),true);
+  if(mode==='dh'||mode==='dv'){const k=mode==='dh'?'x':'y',s=mode==='dh'?'w':'h';bs.sort((a,b)=>a.r[k]-b.r[k]);const gap=(R[s]-bs.reduce((a,b)=>a+b.r[s],0))/(bs.length-1);let p=R[k];for(const b of bs){b.i[k]=Math.round(p+(b.i[k]-b.r[k]));p+=b.r[s]+gap}}
+  else for(const{i,r}of bs){if(mode==='l')i.x+=R.x-r.x;if(mode==='c')i.x+=Math.round(R.x+R.w/2-(r.x+r.w/2));if(mode==='r')i.x+=R.x+R.w-(r.x+r.w);if(mode==='t')i.y+=R.y-r.y;if(mode==='m')i.y+=Math.round(R.y+R.h/2-(r.y+r.h/2));if(mode==='b')i.y+=R.y+R.h-(r.y+r.h)}
+  for(const i of its){place(elOf(i.id),i);stamp(i);flip(elOf(i.id),old.get(i.id))}touch(board());drawLinks();updateSelUI();lensTick()}
+function alignMenu(a){const r=a.getBoundingClientRect();menu(r.left,r.bottom+6,[{head:'Выровнять'},{icon:'al',label:'По левому краю',fn:()=>alignSel('l')},{icon:'ac',label:'По центру (горизонтально)',fn:()=>alignSel('c')},
+  {icon:'ar',label:'По правому краю',fn:()=>alignSel('r')},{icon:'alignv',label:'По верхнему краю',fn:()=>alignSel('t')},{icon:'alignv',label:'По середине (вертикально)',fn:()=>alignSel('m')},{icon:'alignv',label:'По нижнему краю',fn:()=>alignSel('b')},
+  {head:'Распределить'},{icon:'aj',label:'Равные промежутки по горизонтали',fn:()=>alignSel('dh')},{icon:'aj',label:'Равные промежутки по вертикали',fn:()=>alignSel('dv')}])}
+
+/* ================= дерево досок: родители и поддоски ================= */
+function isAnc(a,b){let x=boards[b],g=0;while(x&&g++<60){if(x.id===a)return true;x=boards[x.parent]}return false}
+function setParent(child,parent){const c=boards[child];if(!c||child===parent||(parent&&isAnc(child,parent)))return false;if(parent)c.parent=parent;else delete c.parent;c.parentAt=now();touch(c);return true}
+function adopt(child,parent){const c=boards[child];if(!c||c.parent||child===parent||isAnc(child,parent)||chain(parent)[0]?.id===child)return;if(setParent(child,parent)){toast(`«${c.title}» теперь поддоска «${boards[parent]?.title}»`);renderCrumbs()}}
+function adoptFromLinks(b){for(const it of live(b)){const l=it.link||(it.type==='link'?it.url:'');if(l?.startsWith('board:'))adopt(l.slice(6).split('#')[0],b.id)}}
+function chain(id){const out=[];let b=boards[id],g=0;while(b&&g++<30){out.unshift(b);const p=b.parent&&boards[b.parent];b=p&&!p.deleted?p:null}return out}
+const kidsOf=id=>Object.values(boards).filter(b=>!b.deleted&&b.parent===id).sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+function renderCrumbs(){const c=$('#crumbs');if(!c)return;c.textContent='';const ch=chain(cur);
+  for(const b of ch.slice(0,-1))c.append(h('button',{className:'crumb',title:'Перейти к родительской доске',onclick:()=>{navStack.push(cur);openBoard(b.id);$('#backBtn').hidden=false}},b.title||'Без названия'),h('span',{className:'csep'},'›'))}
+function renderTree(body){const root=chain(cur)[0];if(!root)return;const showAll=renderTree.all;
+  const row=(b,d)=>{const k=kidsOf(b.id),p=boardProgress(b);const r=h('div',{className:'trow tree'+(b.id===cur?' on':''),style:`padding-left:${8+d*20}px`},
+    h('span',{innerHTML:ic(k.length?'tree':'menu',15),className:'muted'}),h('div',{className:'tx',onclick:()=>{if(b.id!==cur){navStack.push(cur);openBoard(b.id);$('#backBtn').hidden=false}}},
+      h('div',{},b.title||'Без названия'),h('small',{},(k.length?k.length+' '+plural(k.length,'поддоска','поддоски','поддосок')+' · ':'')+(p?Math.round(p.p*100)+'% задач':live(b).length+' карточек'))),
+    ibtn('plus','Создать поддоску',()=>{const n=createBoard('Новая поддоска','empty');setParent(n.id,b.id);navStack.push(cur);openBoard(n.id);$('#backBtn').hidden=false;setTimeout(()=>{titleIn.focus();titleIn.select()},60)}));
+    body.append(r);for(const c of k)row(c,d+1)};
+  body.append(h('div',{className:'filters'},h('button',{className:'chip'+(showAll?'':' on'),onclick:()=>{renderTree.all=false;renderWin('tree',true)}},'Эта ветка'),h('button',{className:'chip'+(showAll?' on':''),onclick:()=>{renderTree.all=true;renderWin('tree',true)}},'Все доски')));
+  if(showAll){for(const b of Object.values(boards).filter(b=>!b.deleted&&(!b.parent||!boards[b.parent]||boards[b.parent].deleted)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')))row(b,0)}else row(root,0);
+  body.append(h('div',{className:'muted',style:'padding:10px 4px 0;line-height:1.4'},'Ссылка или кнопка на доску без родителя делает её поддоской текущей. Родителя можно сменить в списке проектов (☰ → ⋯).'))}
+function boardMenu(x,y,b){menu(x,y,[{icon:'edit',label:'Переименовать',fn:()=>{const t=prompt('Название доски:',b.title);if(t?.trim()){b.title=t.trim();b.titleAt=now();touch(b);renderBoardList();if(b.id===cur){titleIn.value=b.title}renderCrumbs()}}},
+  {icon:'tree',label:'Сделать поддоской…',sub:'Выбрать родительскую доску',fn:()=>{const opts=Object.values(boards).filter(o=>!o.deleted&&o.id!==b.id&&!isAnc(b.id,o.id));
+    menu(x,y,[{head:'Родитель для «'+b.title+'»'},...opts.map(o=>({icon:'menu',label:o.title||'Без названия',fn:()=>{setParent(b.id,o.id);renderBoardList();renderCrumbs()}}))])}},
+  ...(b.parent?[{icon:'back',label:'Сделать главной (без родителя)',fn:()=>{setParent(b.id,null);renderBoardList();renderCrumbs()}}]:[]),
+  {icon:'plus',label:'Создать поддоску',fn:()=>{const n=createBoard('Новая поддоска','empty');setParent(n.id,b.id);openBoard(n.id);setTimeout(()=>{titleIn.focus();titleIn.select()},60)}},'-',
+  {icon:'trash',label:'Удалить доску',danger:true,fn:()=>{if(!confirm(`Удалить доску «${b.title}»? Поддоски станут главными.`))return;b.deleted=true;b.delAt=now();touch(b);
+    if(b.id===cur){const n=Object.values(boards).find(o=>!o.deleted);openBoard(n?n.id:createBoard('Новый проект').id)}renderBoardList()}}])}
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
