@@ -997,7 +997,9 @@ function asciiMenu(x,y,up){const img=selItems().find(i=>i.type==='image');
       const X=()=>img.x+(elOf(img.id)?.offsetWidth||img.w)+40;
       menu(x,y,[{head:'В цветах картинки'},...[['ramp','Цветные символы .:-=+#@'],['blocks','Цветные блоки ░▒▓█']].map(([s,l])=>({icon:'palette',label:l,fn:async()=>{try{const r=await imageToAsciiColor(img,s);addAsciiArt(r.text,X(),img.y,7,null,r.html)}catch{toast('Не получилось прочитать картинку')}}})),
         {head:'Одним цветом или градиентом'},...[['ramp','Символы .:-=+#@'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — максимум деталей']].map(([s,l])=>({icon:'image',label:l,fn:async()=>{try{const t=await imageToAscii(img,s);addAsciiArt(t,X(),img.y,s==='braille'?8:7,{g:'aurora',anim:'none'})}catch{toast('Не получилось прочитать картинку')}}}))],up)}},
-    {head:'Галерея — цветные и анимированные'},...Object.keys(ASCII_ART).map(k=>({icon:'term',label:k,sub:ASC_DEF[k]?ASC_G[ASC_DEF[k][0]].l+' · '+ASC_A[ASC_DEF[k][1]].toLowerCase():'',fn:()=>addAsciiArt(ASCII_ART[k],null,null,13,ASC_DEF[k]?{g:ASC_DEF[k][0],anim:ASC_DEF[k][1]}:null)}))],up)}
+    {head:'Картинки — цельные и цветные'},...Object.entries(EMOJI_ART).map(([k,e])=>({icon:'term',label:e+'  '+k,sub:EMOJI_ANIM[k]?ASC_A[EMOJI_ANIM[k]].toLowerCase():'',fn:()=>addEmojiArt(k,e)})),
+    {icon:'plus',label:'Свой эмодзи…',sub:'Любой эмодзи станет ASCII-картинкой',fn:()=>{const e=prompt('Вставьте эмодзи:','🦄');if(e?.trim())addEmojiArt('',e.trim())}},
+    {head:'Рамки, разделители, схемы'},...Object.keys(ASCII_ART).filter(k=>['Терминал','Ноты','Разделитель','Заголовок-рамка','Чек-лист','Стрелки'].includes(k)).map(k=>({icon:'term',label:k,sub:ASC_DEF[k]?ASC_G[ASC_DEF[k][0]].l+' · '+ASC_A[ASC_DEF[k][1]].toLowerCase():'',fn:()=>addAsciiArt(ASCII_ART[k],null,null,13,ASC_DEF[k]?{g:ASC_DEF[k][0],anim:ASC_DEF[k][1]}:null)}))],up)}
 
 
 /* ================= цветной и анимированный ASCII ================= */
@@ -1005,7 +1007,7 @@ const ASC_G={neon:{l:'Неон',c:['#00f5d4','#9b5de5','#f15bb5']},sunset:{l:'З
   aurora:{l:'Аврора',c:['#7f5af0','#2cb67d','#00d2ff']},fire:{l:'Огонь',c:['#f12711','#f5af19','#ffe259']},matrix:{l:'Матрица',c:['#00ff41','#22c55e','#008f11']},
   candy:{l:'Конфета',c:['#ff9a9e','#fbc2eb','#a18cd1']},gold:{l:'Золото',c:['#bf953f','#fcf6ba','#b38728']},ice:{l:'Лёд',c:['#e0eafc','#8ec5fc','#a5b4fc']},
   rainbow:{l:'Радуга',c:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93']}};
-const ASC_A={none:'Без анимации',flow:'Перелив',rainbow:'Радуга по кругу',pulse:'Пульс-свечение',wave:'Волна',glitch:'Глитч',flicker:'Мерцание',type:'Печатная машинка'};
+const ASC_A={none:'Без анимации',flow:'Перелив градиента',rainbow:'Радуга по кругу',pulse:'Пульс-свечение',wave:'Парение',glitch:'Глитч',flicker:'Мерцание',type:'Печатная машинка'};
 const ASC_DEF={'Котик':['candy','wave'],'Кот на заборе':['candy','flow'],'Сова':['gold','pulse'],'Кролик':['ice','wave'],'Кофе':['sunset','flow'],'Ракета':['fire','pulse'],
   'Горы':['aurora','flow'],'Сердце':['sunset','pulse'],'Ноты':['neon','wave'],'Терминал':['matrix','flicker'],'Лампочка-идея':['gold','pulse'],'Призрак':['ice','glitch'],
   'Разделитель':['neon','flow'],'Заголовок-рамка':['aurora','flow'],'Чек-лист':['matrix','type'],'Стрелки':['ocean','flow']};
@@ -1013,12 +1015,15 @@ const isAscii=it=>it?.type==='note'&&it.ff==='mono'&&it.nw;
 function applyAsc(t,it){const a=it.asc;if(!a)return;const G=ASC_G[a.g];
   if(G){const cols=[...G.c,G.c[0]];t.classList.add('ag');t.style.setProperty('--ag',`linear-gradient(${a.dir==='v'?'180deg':'90deg'},${cols.join(',')})`);t.style.setProperty('--agc',G.c[1]||G.c[0])}
   if(a.dir==='v')t.classList.add('vdir');
-  if(a.anim&&a.anim!=='none'){t.classList.add('an-'+a.anim);if(a.anim==='wave')t.innerHTML=t.innerHTML.replace(/<span class="ln"[^>]*>|<\/span>(?=<br>|$)/g,'').split(/<br\s*\/?>/i).map((l,i)=>`<span class="ln" style="--i:${i}">${l||' '}</span>`).join('<br>')}}
+  if(a.anim&&a.anim!=='none')t.classList.add('an-'+a.anim)}
 function ascPop(a,its){closePops();const r=a.getBoundingClientRect();const it=its[0];
-  const apply=f=>{snap(its.map(x=>x.id),true);for(const x of its){x.asc={...(x.asc||{})};f(x.asc);if(!x.asc.g&&(!x.asc.anim||x.asc.anim==='none'))delete x.asc;stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(board());buildSel();render()};
+  const apply=(f,g)=>{snap(its.map(x=>x.id),true);for(const x of its){x.asc={...(x.asc||{})};f(x.asc,x);if(x.asc.g){stripColors(x);delete x.tc}if(!x.asc.g&&(!x.asc.anim||x.asc.anim==='none'))delete x.asc;stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(board());buildSel();render()};
   const p=h('div',{className:'pop glass tpop'});
   function render(){p.textContent='';const s=it.asc||{};
-    p.append(h('div',{className:'phd'},'Градиент'),h('div',{className:'agrid'},h('button',{className:'agsw'+(!s.g?' on':''),title:'Без цвета',onclick:()=>apply(x=>delete x.g)},'—'),
+    const solid=h('div',{className:'tline'},h('span',{className:'muted tl'},'Цвет'),...INKS.map(c=>{const b=h('button',{className:'sw2'+(!s.g&&(it.tc||'auto')===c&&!hasColors(it)?' on':''),title:{auto:'Как у темы','#000000':'Чёрный','#ffffff':'Белый'}[c]||c,onclick:()=>apply((a,x)=>{delete a.g;stripColors(x);if(c==='auto')delete x.tc;else x.tc=c})});b.style.background=c==='auto'?'var(--tx)':c;return b}),
+      h('label',{className:'sw2 cp',title:'Любой цвет'},h('input',{type:'color',className:'cpick',onchange:e=>apply((a,x)=>{delete a.g;stripColors(x);x.tc=e.target.value})})));
+    p.append(h('div',{className:'phd'},'Сплошной цвет'),solid,...(its.some(x=>x.htmlColor||hasColors(x))?[h('div',{className:'tline'},h('button',{className:'chip'+(hasColors(it)?' on':''),onclick:()=>apply((a,x)=>restoreColors(x))},'🎨 Цвета оригинала'))]:[]),
+      h('div',{className:'phd'},'Градиент'),h('div',{className:'agrid'},h('button',{className:'agsw'+(!s.g?' on':''),title:'Без градиента',onclick:()=>apply(x=>delete x.g)},'—'),
       ...Object.entries(ASC_G).map(([k,g])=>{const b=h('button',{className:'agsw'+(s.g===k?' on':''),title:g.l,onclick:()=>apply(x=>x.g=k)});b.style.background=`linear-gradient(90deg,${g.c.join(',')})`;return b})),
       h('div',{className:'tline'},h('span',{className:'muted tl'},'Направление'),h('button',{className:'chip'+(s.dir!=='v'?' on':''),onclick:()=>apply(x=>delete x.dir)},'↔ слева направо'),h('button',{className:'chip'+(s.dir==='v'?' on':''),onclick:()=>apply(x=>x.dir='v')},'↕ сверху вниз')),
       h('div',{className:'phd'},'Анимация'),h('div',{className:'tline'},...Object.entries(ASC_A).map(([k,l])=>h('button',{className:'chip'+((s.anim||'none')===k?' on':''),onclick:()=>apply(x=>x.anim=k)},l))),
@@ -1036,6 +1041,28 @@ async function imageToAsciiColor(it,style='ramp',cols=90){const u=it.src||await 
       if(col!==runC&&run){html+=runC?`<span style="color:${runC}">${esc(run)}</span>`:esc(run);run=''}runC=col;run+=ch;txt+=ch}
     if(run)html+=runC?`<span style="color:${runC}">${esc(run)}</span>`:esc(run);rows.push(html.replace(/\s+$/,''));plain.push(txt.replace(/\s+$/,''))}
   return{html:rows.join('<br>'),text:plain.join('\n')}}
+
+
+/* ================= сплошной цветной ASCII из эмодзи, сплошные цвета ================= */
+const EMOJI_ART={'Котик':'🐱','Лиса':'🦊','Сова':'🦉','Панда':'🐼','Ракета':'🚀','Планета':'🪐','Горы':'🏔️','Луна':'🌙','Сердце':'❤️','Огонь':'🔥','Звезда':'⭐','Лампочка':'💡',
+  'Кофе':'☕','Призрак':'👻','Гриб':'🍄','Кактус':'🌵','Арбуз':'🍉','Радуга':'🌈','Нота':'🎵','Гитара':'🎸','Компьютер':'💻','Робот':'🤖','Алмаз':'💎','Цветок':'🌸'};
+const EMOJI_ANIM={'Сердце':'pulse','Ракета':'wave','Призрак':'wave','Звезда':'pulse','Огонь':'flicker','Радуга':'rainbow','Алмаз':'pulse','Луна':'wave','Нота':'wave','Робот':'glitch'};
+const qhex=(r,g,b)=>'#'+[r,g,b].map(n=>Math.min(255,(n>>4)*17+8).toString(16).padStart(2,'0')).join('');
+function rasterColorAscii(cv,W,H){const d=cv.getContext('2d').getImageData(0,0,W,H).data;const M=[];
+  for(let y=0;y<H;y++){const row=[];for(let x=0;x<W;x++){const i=(y*W+x)*4,a=d[i+3]/255;const ch=a<.12?' ':a<.35?'░':a<.7?'▓':'█';row.push([ch,ch===' '?null:qhex(d[i],d[i+1],d[i+2])])}M.push(row)}
+  const used=r=>r.some(c=>c[0]!==' ');while(M.length&&!used(M[0]))M.shift();while(M.length&&!used(M[M.length-1]))M.pop();
+  let L=W,R=0;for(const r of M)r.forEach((c,x)=>{if(c[0]!==' '){L=Math.min(L,x);R=Math.max(R,x)}});
+  const rows=[],plain=[];for(const r of M){const cs=r.slice(L,R+1);while(cs.length&&cs[cs.length-1][0]===' ')cs.pop();let html='',txt='',run='',rc=null;
+    for(const[ch,col0]of cs){const col=col0??rc;if(col!==rc&&run){html+=rc?`<span style="color:${rc}">${esc(run)}</span>`:esc(run);run=''}rc=col;run+=ch;txt+=ch}
+    if(run)html+=rc?`<span style="color:${rc}">${esc(run)}</span>`:esc(run);rows.push(html);plain.push(txt)}
+  return{html:rows.join('<br>'),text:plain.join(String.fromCharCode(10))}}
+function emojiToAscii(e,cols=34){const S=160,big=document.createElement('canvas');big.width=big.height=S;const g=big.getContext('2d');
+  g.font=`${S*.82}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(e,S/2,S/2+S*.04);
+  const W=cols,H=Math.round(cols/1.9),sm=document.createElement('canvas');sm.width=W;sm.height=H;const s=sm.getContext('2d');s.imageSmoothingQuality='high';s.drawImage(big,0,0,W,H);return rasterColorAscii(sm,W,H)}
+function addEmojiArt(name,e,x,y){const r=emojiToAscii(e);const an=EMOJI_ANIM[name];return addAsciiArt(r.text,x,y,12,an?{anim:an}:null,r.html)}
+const hasColors=x=>/<span style="color:/.test(x.html||'');
+function stripColors(x){if(!hasColors(x))return;x.htmlColor??=x.html;x.html=x.html.replace(/<span style="color:[^"]*">/g,'').replace(/<\/span>/g,'')}
+function restoreColors(x){if(x.htmlColor){x.html=x.htmlColor;delete x.htmlColor}if(x.asc)delete x.asc.g;delete x.tc}
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');

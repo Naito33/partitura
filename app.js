@@ -215,7 +215,7 @@ function onSelChange(){if(wins.comments&&selSet.size===1){wins.comments._card=[.
 const COLORS=['','#f59e0b','#10b981','#3b82f6','#ec4899','#8b5cf6','#ef4444','#14b8a6'];
 const PRIO={must:{l:'Необходимо',c:'#10b981',k:'1'},should:{l:'Менее важно',c:'#f59e0b',k:'2'},nope:{l:'Не нужно',c:'#9ca3af',k:'3'}};
 const isSortable=i=>i&&!['frame','pin','draw','heading','gantt'].includes(i.type);
-const INKS=['auto','#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#9ca3af'];
+const INKS=['auto','#000000','#ffffff','#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#9ca3af'];
 const inkCss=c=>!c||c==='auto'?'var(--tx)':c;
 const TYPES={
  note:{name:'Заметка',icon:'note',w:290},sticky:{name:'Стикер',icon:'sticky',w:210},todo:{name:'Чек-лист',icon:'check',w:300},
@@ -598,7 +598,7 @@ function prioMenu(a,its){const r=a.getBoundingClientRect();const fr=its.length==
     '-',{icon:'kanban',label:'Разложить по зонам',sub:'Создаст зоны и разложит карточки по оценкам',fn:arrangeZones}])}
 function colorPop(anchor,its,inkMode){closePops();const r=anchor.getBoundingClientRect();const list=inkMode?INKS:COLORS;
   const p=h('div',{className:'pop swatches glass'},...list.map((c,i)=>{const val=inkMode?c:i;const cur_=inkMode==='tc'?(its[0].tc||'auto'):inkMode?(its[0].color||'auto'):(its[0].c||0);
-    const b=h('button',{className:cur_===val?'on':'',title:c?'':'Без цвета',onclick:()=>{const B=board();snap(its.map(x=>x.id),true);for(const it of its){if(inkMode==='tc')it.tc=c;else if(inkMode)it.color=c;else it.c=i;stamp(it);
+    const b=h('button',{className:cur_===val?'on':'',title:c?'':'Без цвета',onclick:()=>{const B=board();snap(its.map(x=>x.id),true);for(const it of its){if(inkMode==='tc'){it.tc=c;if(isAscii(it)){stripColors(it);if(it.asc){delete it.asc.g;if(!it.asc.anim||it.asc.anim==='none')delete it.asc}}}else if(inkMode)it.color=c;else it.c=i;stamp(it);
       if(it.type==='_conn')continue;const el=elOf(it.id);if(it.type==='draw'||it.type==='pin'||inkMode==='tc'||it.type==='shape')el.replaceWith(renderItem(it));else place(el,it)}touch(B);drawLinks();buildSel();closePops()}});
     b.style.background=inkMode?(c==='auto'?'var(--tx)':c):(c||'var(--card)');return b}));
   if(inkMode&&its.every(i=>i.type==='draw'))p.append(h('div',{style:'width:100%;display:flex;gap:4px'},...[2,3,6,10].map(s=>h('button',{className:'chip'+(its[0].size===s?' on':''),onclick:()=>{snap(its.map(x=>x.id),true);for(const it of its){it.size=s;stamp(it);elOf(it.id).replaceWith(renderItem(it))}touch(board());closePops()}},s+'px'))));
