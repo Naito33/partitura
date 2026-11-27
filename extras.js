@@ -1140,6 +1140,109 @@ function startRotate(e,it){e.preventDefault();e.stopPropagation();if(it.locked)r
     tip.textContent=Math.round((a*180/Math.PI+360)%360)+'°'+(ev.shiftKey?' · шаг 15°':'');tip.style.left=ev.clientX+16+'px';tip.style.top=ev.clientY+18+'px'},
   ()=>{fin();if(moved){stamp(it);touch(board())}},fin)}
 
+
+/* ================= 90s Japan × cyberpunk: кана, звуки, терминал, анимации ================= */
+const JP={'Задачи':'タスク','Активность':'活動記録','Обсуждение':'議論','Вдохновение':'霊感','ИИ-помощник':'人工知能','Структура досок':'構造図','Точечный арт':'ドット絵','Пригласить друга':'招待',
+  'Терминал':'端末','Проекты':'プロジェクト','Настройки':'設定','Новый проект':'新規','Добавить':'追加','Палитры':'パレット','Точечный арт':'ドット絵','ASCII-арт':'アスキー','Выровнять':'整列','Распределить':'分配',
+  'Сортировка':'分類','Диаграммы':'図表','Майнд-карта':'マインドマップ','Планирование':'計画','Галерея — точечные картинки':'ギャラリー','Стиль':'様式','Источник':'入力','Палитра':'色彩','Шрифт':'書体',
+  'Размер':'寸法','Стиль и выравнивание':'整形','Градиент':'グラデ','Анимация':'動画','Сплошной цвет':'単色','Важность':'重要度','Рамки, разделители, схемы':'枠','Блок-схема · Tab в фигуре — следующий шаг':'流れ図'};
+const jpOn=()=>localStorage.jp!=='0';
+const KANA='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ0123456789';
+function kanaRain(cv,{speed=1,alpha=.85,fs=16}={}){const g=cv.getContext('2d');let cols,drops,raf,last=0;
+  const size=()=>{cv.width=cv.clientWidth||innerWidth;cv.height=cv.clientHeight||innerHeight;cols=Math.ceil(cv.width/fs);drops=Array.from({length:cols},()=>Math.random()*-60)};size();
+  const ac=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#33ff88';
+  const step=t=>{raf=requestAnimationFrame(step);if(t-last<55/speed)return;last=t;g.fillStyle='rgba(3,3,3,.09)';g.fillRect(0,0,cv.width,cv.height);g.font=`${fs}px "MS Gothic","Yu Gothic","Noto Sans JP",monospace`;
+    for(let i=0;i<cols;i++){const y=drops[i]*fs;g.globalAlpha=alpha;g.fillStyle=Math.random()<.05?'#fff':ac;g.fillText(KANA[Math.random()*KANA.length|0],i*fs,y);if(y>cv.height&&Math.random()>.97)drops[i]=0;drops[i]++}g.globalAlpha=1};
+  raf=requestAnimationFrame(step);addEventListener('resize',size);return()=>{cancelAnimationFrame(raf);removeEventListener('resize',size)}}
+let sfxCtx=null;
+function sfx(k){if(localStorage.sfx!=='1')return;try{sfxCtx??=new AudioContext();const a=sfxCtx,o=a.createOscillator(),g=a.createGain();o.type='square';
+  const T={tick:[1500,1500,.022],open:[260,980,.1],ok:[880,1320,.07],err:[230,120,.16],key:[2200,2200,.01]}[k]||[1000,1000,.03];
+  o.frequency.setValueAtTime(T[0],a.currentTime);o.frequency.exponentialRampToValueAtTime(T[1],a.currentTime+T[2]);g.gain.setValueAtTime(.03,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+T[2]);
+  o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+T[2]+.01)}catch{}}
+{const _openWin=openWin;openWin=function(id,title,render,o){const isNew=!wins[id];const w=_openWin(id,title,render,o);const b=w.querySelector('.win-h b');if(jpOn()&&JP[title])b.dataset.jp=JP[title];else delete b.dataset.jp;if(isNew)sfx('open');return w}}
+{const _menu=menu;menu=function(...a){const m=_menu.apply(this,a);if(jpOn())m.querySelectorAll('.phd').forEach(x=>{const j=JP[x.textContent.trim()];if(j)x.dataset.jp=j});sfx('tick');return m}}
+{const _toast=toast;toast=function(t,act){_toast(t,act);if(document.documentElement.dataset.theme!=='term')return;const sp=$('#toast span');if(!sp)return;const full=sp.textContent;sp.textContent='';let i=0;
+  clearInterval(toast.tw);toast.tw=setInterval(()=>{i+=2;sp.textContent=full.slice(0,i);if(i>=full.length)clearInterval(toast.tw)},14);sfx('ok')}}
+{const _add=addItem;addItem=function(...a){sfx('tick');return _add.apply(this,a)}}
+{const _eh=emptyHint;emptyHint=function(){_eh();const e=$('#emptyHint');if(e&&!e.querySelector('.kanji'))e.prepend(h('span',{className:'kanji'},'空'))}}
+function decorateJP(){const on=jpOn();document.body.classList.toggle('jp',on);
+  const set=(el,j)=>{if(!el)return;if(on)el.dataset.jp=j;else delete el.dataset.jp};set($('.dh b'),'プロジェクト');set($('#settings h3'),'設定');set($('#tpl h3'),'新規');
+  const br=$('#brand');if(br&&!br.querySelector('.jp'))br.append(h('em',{className:'jp'},'パルティトゥーラ'))}
+decorateJP();
+bootScreen=function(){if(sessionStorage.booted||localStorage.theme!=='term')return;sessionStorage.booted=1;
+  const nB=Object.values(boards).filter(b=>!b.deleted).length,nI=Object.values(boards).reduce((a,b)=>a+live(b).length,0);
+  const lines=[['ok',`[ 起動 ] монтирую ~/boards ........ ${nB} ${plural(nB,'доска','доски','досок')} · ${nI} ${plural(nI,'карточка','карточки','карточек')}`],
+    ['ok',`[ 同期 ] синхронизация ............ ${cfg.owner?'github://'+cfg.owner+'/'+cfg.repo:'локально'}`],['ok',`[ 通信 ] p2p-канал ................ ${cfg.token&&localStorage.live!=='0'?'слушаю пиров':'выключен'}`],
+    ['ok','[ 準備 ] шрифты · палитры · кана .. ок'],['ok',`[ 認証 ] оператор ................. ${me()||'гость'}`],['dim','パルティトゥーラ v2026.11 :: нажмите любую клавишу']];
+  const el=h('div',{id:'boot'});const cv=h('canvas',{className:'rain'});el.append(cv,h('pre',{},banner('PARTITURA')),h('div',{className:'sub'},'パルティトゥーラ · ДОСКИ · ИДЕИ · КОМАНДА'));const log=h('div',{className:'log'});el.append(log);document.body.append(el);
+  const stop=kanaRain(cv,{alpha:.55,fs:15});let i=0,done=false;const close=()=>{if(done)return;done=true;el.classList.add('hide');setTimeout(()=>{stop();el.remove()},500);removeEventListener('keydown',close,true)};
+  const step=()=>{if(done)return;if(i<lines.length){const[c,t]=lines[i++];log.append(h('div',{className:c},t));sfx('key');setTimeout(step,i===lines.length?450:130)}else setTimeout(close,800)};
+  setTimeout(step,300);el.addEventListener('click',close);addEventListener('keydown',close,true)};
+function kanaScreensaver(){const el=h('div',{id:'kanaSS'});const cv=h('canvas');el.append(cv,h('div',{className:'kcap'},'端末 // ЛЮБАЯ КЛАВИША — ВЫХОД'));document.body.append(el);const stop=kanaRain(cv,{alpha:.95,fs:18,speed:1.2});
+  const close=()=>{stop();el.remove();removeEventListener('keydown',close,true)};setTimeout(()=>{el.addEventListener('click',close);addEventListener('keydown',close,true)},200)}
+
+/* ================= командная строка ================= */
+const CLI={hist:JSON.parse(localStorage.cliHist||'[]'),hi:-1,res:[]};
+const CMDS={help:'список команд',ls:'доски (дерево)',cd:'перейти: cd <название> | cd .. | cd /',pwd:'где я',new:'new <тип> [текст] — sticky, note, text, todo, kanban, frame, shape, timer, chart',
+  todo:'todo <текст> — добавить задачу',find:'find <текст> — поиск по всем доскам',open:'open <N> — открыть результат поиска',art:'art <текст> — точечный арт',
+  theme:'theme hud|dark|light',accent:'accent amber|phosphor|signal|ice|pink',zoom:'zoom <процент>',fit:'показать всё',stats:'статистика доски',kana:'заставка «дождь каны»',
+  undo:'отменить',redo:'вернуть',sync:'синхронизировать',whoami:'кто я',date:'дата и время',echo:'echo <текст>',clear:'очистить экран',exit:'закрыть терминал'};
+function cliPrint(t,cls){const o=$('#cli .cli-out');if(!o)return;o.append(h('div',{className:cls||''},t));o.scrollTop=o.scrollHeight}
+const findBoard=q=>{q=q.toLowerCase();const all=Object.values(boards).filter(b=>!b.deleted);return all.find(b=>(b.title||'').toLowerCase()===q)||all.find(b=>(b.title||'').toLowerCase().startsWith(q))||all.find(b=>(b.title||'').toLowerCase().includes(q))};
+function cliRun(line){const raw=line.trim();if(!raw)return;CLI.hist.unshift(raw);CLI.hist=CLI.hist.slice(0,60);localStorage.cliHist=JSON.stringify(CLI.hist);CLI.hi=-1;
+  cliPrint(cliPs()+' '+raw,'m');const[cmd,...rest]=raw.split(/\s+/);const arg=rest.join(' ');const c=cmd.toLowerCase();
+  const out=(t,cls)=>cliPrint(t,cls);
+  try{switch(c){
+    case'help':case'?':out('КОМАНДЫ ／ コマンド','a');for(const[k,v]of Object.entries(CMDS))out(`  ${k.padEnd(8)} ${v}`);out('Tab — дополнение, ↑↓ — история, ` (Ё) — открыть/закрыть терминал','m');break;
+    case'ls':{const walk=(b,d)=>{out(`${'  '.repeat(d)}${b.id===cur?'▶':'·'} ${b.title||'Без названия'}  [${live(b).length}]`,b.id===cur?'a':'');for(const k of kidsOf(b.id))walk(k,d+1)};
+      for(const b of Object.values(boards).filter(b=>!b.deleted&&(!b.parent||!boards[b.parent]||boards[b.parent].deleted)).sort(bOrder))walk(b,0);break}
+    case'cd':{if(!arg||arg==='/'){const r=chain(cur)[0];if(r&&r.id!==cur)openBoard(r.id);out('→ '+(r?.title||''),'a');break}
+      if(arg==='..'){const p=board()?.parent&&boards[board().parent];if(!p){out('уже на верхнем уровне','e');break}openBoard(p.id);out('→ '+p.title,'a');break}
+      const b=findBoard(arg);if(!b){out('доска не найдена: '+arg,'e');sfx('err');break}navStack.push(cur);openBoard(b.id);out('→ '+b.title,'a');break}
+    case'pwd':out('/'+chain(cur).map(b=>b.title).join('/'),'a');break;
+    case'new':{const[t,...tx]=rest;const T=(t||'').toLowerCase();const text=tx.join(' ');const map={sticky:'sticky',стикер:'sticky',note:'note',заметка:'note',text:'text',текст:'text',todo:'todo',kanban:'kanban',frame:'frame',раздел:'frame',shape:'shape',timer:'timer',chart:'chart',heading:'heading'};
+      const k=map[T];if(!k){out('тип? '+Object.keys(map).filter(x=>/^[a-z]/.test(x)).join(', '),'e');break}
+      if(k==='text')addItem({type:'note',bare:true,fs:22,w:320,html:esc(text),noFocus:true});else if(k==='sticky')addItem({type:'sticky',text,noFocus:true});else if(k==='note')addItem({type:'note',html:esc(text),noFocus:true});
+      else if(k==='heading')addItem({type:'heading',text,noFocus:true});else if(k==='frame')addItem({type:'frame',title:text,noFocus:true});else if(k==='todo')addItem({type:'todo',title:text,rows:[{id:uid(),text:'',done:false}],noFocus:true});else addItem({type:k,noFocus:true});out('+ '+k+(text?': '+text:''),'a');break}
+    case'todo':{if(!arg){out('todo <текст>','e');break}let t=live(board()).find(i=>i.type==='todo');if(!t)t=addItem({type:'todo',title:'Задачи',rows:[],noFocus:true});
+      edit(t,()=>t.rows.push({id:uid(),text:arg,done:false}));rerenderCard(t.id);out('✓ задача добавлена в «'+(t.title||'Чек-лист')+'»','a');break}
+    case'find':{if(!arg){out('find <текст>','e');break}CLI.res=[];const q=arg.toLowerCase();for(const b of Object.values(boards)){if(b.deleted)continue;for(const i of live(b)){const t=itemText(i);if(t.toLowerCase().includes(q))CLI.res.push({b,i,t})}}
+      if(!CLI.res.length){out('ничего не найдено','e');break}CLI.res.slice(0,20).forEach((r,n)=>out(`  [${n+1}] ${r.b.title} · ${TYPES[r.i.type]?.name||r.i.type}: ${r.t.slice(0,60)}`));out('open <N> — перейти','m');break}
+    case'open':{const r=CLI.res[(+arg||1)-1];if(!r){out('нет такого результата','e');break}if(r.b.id!==cur)openBoard(r.b.id);setTimeout(()=>focusCard(r.i.id),60);out('→ '+r.t.slice(0,50),'a');break}
+    case'art':{if(!arg){out('art <текст>','e');break}const pal={amber:'amber',phosphor:'phosphor',signal:'atari',ice:'ice',pink:'pink'}[localStorage.hudAcc||'amber']||'amber';addDotQuick({type:'text',v:arg},{pal,cols:Math.min(180,Math.max(60,arg.length*14)),cell:6});out('▦ точечный арт: '+arg,'a');break}
+    case'theme':{if(!['hud','dark','light','term'].includes(arg)){out('theme hud|dark|light','e');break}setTheme(arg==='hud'?'term':arg);out('тема: '+arg,'a');break}
+    case'accent':{if(!HUD_ACC[arg]){out('accent '+Object.keys(HUD_ACC).join('|'),'e');break}localStorage.hudAcc=arg;applyHud();drawLinks();out('акцент: '+HUD_ACC[arg][2],'a');break}
+    case'zoom':{const z=parseFloat(arg);if(!z){out('zoom <процент>','e');break}zoomAt(vp.clientWidth/2,vp.clientHeight/2,z/100/view.s);out('масштаб '+z+'%','a');break}
+    case'fit':fitView(true,true);out('показываю всё','a');break;
+    case'stats':{const b=board();const its=live(b);const t=allTasks(b);const by={};for(const i of its)by[i.type]=(by[i.type]||0)+1;
+      out(`доска «${b.title}» · карточек ${its.length} · задач ${t.length} (готово ${t.filter(x=>x.done).length})`,'a');out('  '+Object.entries(by).map(([k,v])=>`${TYPES[k]?.name||k}: ${v}`).join(' · '));break}
+    case'kana':case'matrix':kanaScreensaver();break;
+    case'undo':undo();out('отменено','a');break;case'redo':redo();out('возвращено','a');break;
+    case'sync':sync();out(cfg.token?'синхронизирую…':'синхронизация не настроена','a');break;
+    case'whoami':out((me()||'гость')+(cfg.owner?` @ github://${cfg.owner}/${cfg.repo}`:''),'a');break;
+    case'date':{const d=new Date();out(d.toLocaleString('ru')+'  ·  '+d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日','a');break}
+    case'echo':out(arg);break;
+    case'clear':case'cls':$('#cli .cli-out').textContent='';break;
+    case'exit':case'q':$('#cli').hidden=true;break;
+    case'sudo':out('у вас и так все права, оператор ;)','k');break;
+    default:out(`команда не найдена: ${cmd} — help`,'e');sfx('err')}}catch(err){out('ошибка: '+err.message,'e')}}
+const cliPs=()=>`${(me()||'guest').toLowerCase().replace(/\s+/g,'_')}@partitura:~/${(board()?.title||'').toLowerCase().replace(/\s+/g,'_').slice(0,20)}$`;
+function openCli(){let w=$('#cli');if(w){w.hidden=!w.hidden;if(!w.hidden){w.querySelector('.ps').textContent=cliPs();w.querySelector('input').focus()}return}
+  const inp=h('input',{spellcheck:false,autocomplete:'off',placeholder:'help'});const ps=h('span',{className:'ps'},cliPs());
+  w=h('div',{id:'cli',className:'glass'},h('div',{className:'cli-h'},h('span',{},'■ TERMINAL'),h('span',{className:'jpx'},'／ 端末'),h('span',{className:'sp'}),ibtn('x','Закрыть (`)',()=>w.hidden=true)),h('div',{className:'cli-out'}),h('div',{className:'cli-row'},ps,inp));
+  document.body.append(w);cliPrint('PARTITURA SHELL v2026.11 — パルティトゥーラ','a');cliPrint('help — список команд · ls — доски · new sticky Идея — создать стикер','m');
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){cliRun(inp.value);inp.value='';ps.textContent=cliPs()}
+    else if(e.key==='ArrowUp'){e.preventDefault();CLI.hi=Math.min(CLI.hist.length-1,CLI.hi+1);inp.value=CLI.hist[CLI.hi]||''}
+    else if(e.key==='ArrowDown'){e.preventDefault();CLI.hi=Math.max(-1,CLI.hi-1);inp.value=CLI.hist[CLI.hi]||''}
+    else if(e.key==='Tab'){e.preventDefault();const v=inp.value;const parts=v.split(' ');if(parts.length===1){const m=Object.keys(CMDS).filter(k=>k.startsWith(v));if(m.length===1)inp.value=m[0]+' ';else if(m.length)cliPrint(m.join('  '),'m')}
+      else if(['cd'].includes(parts[0])){const q=parts.slice(1).join(' ').toLowerCase();const m=Object.values(boards).filter(b=>!b.deleted&&(b.title||'').toLowerCase().startsWith(q));if(m.length===1)inp.value='cd '+m[0].title;else if(m.length)cliPrint(m.map(b=>b.title).join('  '),'m')}}
+    else if(e.key==='Escape'){w.hidden=true;inp.blur()}else sfx('key')});
+  inp.focus()}
+document.addEventListener('keydown',e=>{if(e.code==='Backquote'&&!e.ctrlKey&&!e.metaKey&&!isEditing()&&!document.querySelector('dialog[open]')){e.preventDefault();openCli()}});
+(()=>{const b=h('button',{className:'ib',id:'cliBtn',title:'Терминал (` или Ё)',innerHTML:ic('term'),onclick:openCli});$('#searchBtn').before(b)})();
+(()=>{const host=$('#sCrt').closest('label');host.after(h('label',{className:'cbx'},h('input',{type:'checkbox',id:'sSfx',checked:localStorage.sfx==='1',onchange:e=>{localStorage.sfx=e.target.checked?'1':'0';sfx('ok')}}),' Звуки интерфейса в стиле 90-х'),
+  h('label',{className:'cbx'},h('input',{type:'checkbox',id:'sJp',checked:jpOn(),onchange:e=>{localStorage.jp=e.target.checked?'1':'0';decorateJP()}}),' Японские подписи (タスク, 設定…)'))})();
+
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
