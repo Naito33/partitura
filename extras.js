@@ -92,7 +92,8 @@ function appsMenu(btn){closePops();const r=btn.getBoundingClientRect();const inp
   const go=()=>{const u=inp.value.trim();if(!/^https?:\/\//i.test(u))return toast('Нужна ссылка, начинающаяся с https://');closePops();embedOrLink(u)};
   inp.onkeydown=e=>{if(e.key==='Enter')go()};
   const p=h('div',{className:'pop glass',style:'width:min(380px,94vw);padding:12px'},h('div',{className:'phd'},'Встроить приложение'),
-    h('div',{className:'inrow'},inp,h('button',{className:'btn pri sm',onclick:go},'Добавить')),h('div',{className:'phd'},'Музыка, видео, дизайн, документы'),
+    h('div',{className:'inrow'},inp,h('button',{className:'btn pri sm',onclick:go},'Добавить')),
+    h('button',{className:'mi',onclick:()=>{closePops();pickAudio()},innerHTML:ic('music',16)+'<span>Свой трек с эквалайзером<small>mp3, m4a, ogg, wav, flac — или перетащите файл на холст</small></span>'}),h('div',{className:'phd'},'Музыка, видео, дизайн, документы'),
     h('div',{className:'svc'},...SERVICES.map(s=>h('button',{className:'chip',title:s.ex,onclick:()=>{inp.placeholder=s.ex;inp.focus()}},s.name))),
     h('small',{style:'padding:10px 4px 0;line-height:1.4'},'Проще всего — скопировать ссылку и нажать Ctrl+V прямо на холсте. Картинки из Pinterest и других сайтов можно перетаскивать на доску из браузера.'));
   document.body.append(p);posPop(p,r.left-170,r.top-p.offsetHeight-10);inp.focus()}
@@ -256,6 +257,7 @@ function diagramMenu(btn){const r=btn.getBoundingClientRect();menu(r.left,r.top-
   {head:'Блок-схема · Tab в фигуре — следующий шаг'},...['rect','round','ellipse','diamond','para','cyl','hex','doc','tri'].map(k=>({icon:'shapes',label:SHAPES[k],fn:()=>addShape(k)})),
   {head:'Диаграммы'},...Object.entries(CHARTS).map(([k,v])=>({icon:'chart',label:v,sub:k==='gauge'?'Прогресс проекта':k==='pie'||k==='donut'?'Задачи: готово / открыто':k==='hbar'?'Задачи по людям':'',
     fn:()=>addItem({type:'chart',kind:k,src:k==='gauge'?'progress':k==='pie'||k==='donut'?'status':k==='hbar'?'who':'manual',noFocus:true},...spotNear(360))})),
+  {head:'Сортировка'},{icon:'check',label:'Сортировка по важности',sub:'Зоны «Необходимо», «Менее важно», «Не нужно»',fn:arrangeZones},
   {head:'Планирование'},{icon:'gantt',label:'Таймлайн задач (диаграмма Ганта)',sub:'Из задач со сроками',fn:()=>addItem({type:'gantt',noFocus:true},...spotNear(720))}],true)}
 function linkPop(anchor,its){closePops();const r=anchor.getBoundingClientRect();const it=its[0];const inp=h('input',{placeholder:'https://…',value:it.link&&!it.link.startsWith('board:')?it.link:''});
   const set=v=>{const B=board();snap(its.map(x=>x.id),true);for(const x of its){if(v)x.link=v;else delete x.link;stamp(x);elOf(x.id)?.replaceWith(renderItem(x))}touch(B);closePops();buildSel();drawLinks()};
@@ -514,11 +516,12 @@ function showCursor(pid,name,m){let c=RT.curs[pid];if(m.b!==cur){if(c)c.el.style
 function rtCursorsClear(){for(const c of Object.values(RT.curs))c.el.style.opacity=0}
 
 /* ================= настройки, импорт/экспорт, верхняя панель ================= */
-function openSettings(){$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
+function openSettings(){$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
   const a=aiCfg();$('#sAiKey').value=a.key||'';$('#sAiModel').value=a.model||'claude-opus-5-5';$('#setMsg').textContent='';$('#settings').showModal()}
 $('#sClose').onclick=()=>$('#settings').close();
 $('#sOff').onclick=()=>{cfg={};localStorage.cfg='{}';rtStop();setSync('off');$('#settings').close();toast('Синхронизация отключена')};
 $('#sSave').onclick=async()=>{const name=$('#sName').value.trim();if(name!==me()){localStorage.myName=name;updatePeople();paintMeta()}
+  localStorage.kinds=$('#sKinds').checked?'1':'0';document.body.classList.toggle('nokinds',localStorage.kinds==='0');
   localStorage.ai=JSON.stringify({key:$('#sAiKey').value.trim(),model:$('#sAiModel').value});
   const lv=$('#sLive').checked;localStorage.live=lv?'1':'0';if(!lv)rtStop();
   const c={owner:$('#sOwner').value.trim(),repo:$('#sRepo').value.trim(),token:$('#sToken').value.trim()};const m=$('#setMsg');
@@ -579,6 +582,7 @@ document.addEventListener('keydown',e=>{const mod=e.ctrlKey||e.metaKey,dlg=docum
   if(e.key.startsWith('Arrow')&&selSet.size){e.preventDefault();const s=e.shiftKey?10:1;nudge(e.key==='ArrowLeft'?-s:e.key==='ArrowRight'?s:0,e.key==='ArrowUp'?-s:e.key==='ArrowDown'?s:0);return}
   if(e.key==='Enter'&&selSet.size===1){const el=elOf([...selSet][0]);const f=el?.querySelector('.txt,.rt,.ttl');if(f){e.preventDefault();f.focus();if(f.isContentEditable)placeEnd(f)}return}
   if(mod||e.altKey)return;
+  if(!e.shiftKey&&['Digit1','Digit2','Digit3','Digit0'].includes(e.code)&&selSet.size){setPrio(selItems(),{Digit1:'must',Digit2:'should',Digit3:'nope',Digit0:null}[e.code]);return}
   const T={KeyV:'select',KeyH:'hand',KeyP:'pen',KeyA:'arrow',KeyI:'pin',KeyR:'rope'}[e.code];if(T){setTool(T);return}
   if(e.code==='KeyN')addOfType('sticky');else if(e.code==='KeyT')addOfType('text');else if(e.code==='KeyD'){const b=[...dock.children].find(x=>x.dataset.tip?.startsWith('Фигуры'));if(b)diagramMenu(b)}else if(e.code==='KeyF')addOfType('frame');
   else if(e.key==='='||e.key==='+')zoomAt(vp.clientWidth/2,vp.clientHeight/2,1.3);else if(e.key==='-')zoomAt(vp.clientWidth/2,vp.clientHeight/2,1/1.3);
@@ -586,6 +590,63 @@ document.addEventListener('keydown',e=>{const mod=e.ctrlKey||e.metaKey,dlg=docum
 document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;document.body.classList.remove('space')}});
 addEventListener('blur',()=>{spaceDown=false;document.body.classList.remove('space')});
 addEventListener('resize',()=>updateSelUI());
+
+
+/* ================= музыка с эквалайзером ================= */
+const EQB=[60,230,910,3600,14000],EQL=['60','230','910','3.6к','14к'];
+const EQP={'Ровно':[0,0,0,0,0],'Бас':[8,5,0,-1,-2],'Вокал':[-2,-1,4,3,1],'Рок':[5,2,-2,3,5],'Электроника':[6,3,-1,2,5],'Акустика':[2,1,2,3,2],'Ночью тихо':[-3,-1,1,0,-4]};
+const players={};let actx=null;
+function player(it){let p=players[it.id];if(p)return p;const a=new Audio();a.preload='metadata';p=players[it.id]={a};
+  for(const ev of['play','pause','timeupdate','loadedmetadata','ended'])a.addEventListener(ev,()=>{p.ui?.();if(ev==='play')vizKick()});
+  imgURL(it.img).then(u=>{if(u)a.src=u;else toast('Файл трека ещё не загружен на это устройство')});a.volume=it.vol??.9;return p}
+function graph(it,p){actx??=new(window.AudioContext||window.webkitAudioContext)();if(p.f)return;const src=actx.createMediaElementSource(p.a);
+  p.f=EQB.map((fr,i)=>{const b=actx.createBiquadFilter();b.type=i===0?'lowshelf':i===4?'highshelf':'peaking';b.frequency.value=fr;b.Q.value=1.1;b.gain.value=(it.eq||[])[i]||0;return b});
+  p.an=actx.createAnalyser();p.an.fftSize=256;p.an.smoothingTimeConstant=.8;let n=src;for(const b of p.f){n.connect(b);n=b}n.connect(p.an);p.an.connect(actx.destination)}
+const fmtS=t=>isFinite(t)?Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'):'0:00';
+function fillAudio(it,el,bd){const p=player(it);const cv=h('canvas',{className:'viz',width:640,height:128});
+  const pp=h('button',{className:'pp',title:'Играть / пауза'});const seek=h('input',{type:'range',className:'live',min:0,max:1000,value:0,title:'Перемотка'});const tm=h('span',{className:'atime'},'0:00');
+  const vol=h('input',{type:'range',className:'live',min:0,max:100,value:Math.round((it.vol??.9)*100),style:'max-width:64px;flex:none',title:'Громкость',oninput:e=>p.a.volume=e.target.value/100,onchange:e=>edit(it,{vol:e.target.value/100})});
+  p.ui=()=>{pp.innerHTML=ic(p.a.paused?'play':'pause',18);tm.textContent=fmtS(p.a.currentTime)+' / '+fmtS(p.a.duration);if(!seek._d&&p.a.duration)seek.value=p.a.currentTime/p.a.duration*1000};
+  pp.onclick=async e=>{e.stopPropagation();graph(it,p);if(actx.state==='suspended')await actx.resume();
+    if(p.a.paused){for(const o of Object.values(players))if(o!==p)o.a.pause();p.a.play().catch(()=>toast('Не удалось воспроизвести файл'))}else p.a.pause()};
+  seek.oninput=()=>{seek._d=1;if(p.a.duration)p.a.currentTime=seek.value/1000*p.a.duration};seek.onchange=()=>seek._d=0;
+  const setG=(i,v)=>{graph(it,p);p.f[i].gain.setTargetAtTime(v,actx.currentTime,.06)};
+  const sl=EQB.map((_,i)=>h('input',{type:'range',className:'live',min:-12,max:12,step:1,value:(it.eq||[])[i]||0,title:EQL[i]+' Гц',oninput:e=>{const v=+e.target.value;(it.eq??=[0,0,0,0,0])[i]=v;setG(i,v)},onchange:()=>edit(it,{eq:it.eq})}));
+  const eq=h('div',{className:'eqp'},h('div',{className:'eqb'},...sl.map((s,i)=>h('label',{},s,EQL[i]))),
+    h('div',{className:'filters',style:'margin:8px 0 0'},...Object.entries(EQP).map(([n,v])=>h('button',{className:'chip',onclick:e=>{e.stopPropagation();edit(it,{eq:[...v]});v.forEach((g,i)=>{setG(i,g);sl[i].value=g})}},n))));
+  eq.hidden=!!it.eqOff;const eqb=h('button',{className:'chip'+(it.eqOff?'':' on'),onclick:e=>{e.stopPropagation();edit(it,{eqOff:!it.eqOff});eq.hidden=!!it.eqOff;eqb.classList.toggle('on',!it.eqOff)}},'Эквалайзер');
+  bd.append(ttlInput(it,'Трек'),cv,h('div',{className:'actl'},pp,seek,tm),h('div',{className:'eqv'},h('span',{innerHTML:ic('music',14)}),'Громкость',vol,h('span',{className:'sp'}),eqb),eq);
+  p.ui();setTimeout(vizKick,30)}
+let vizR=0;function vizKick(){if(!vizR)vizR=requestAnimationFrame(vizFrame)}
+function vizFrame(){vizR=0;let any=false;const t=performance.now();
+  for(const[id,p]of Object.entries(players)){const cv=elOf(id)?.querySelector('canvas.viz');if(!cv)continue;const g=cv.getContext('2d'),W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
+    let d=null;if(p.an&&!p.a.paused){d=new Uint8Array(p.an.frequencyBinCount);p.an.getByteFrequencyData(d);any=true}const n=44;
+    for(let i=0;i<n;i++){const v=d?d[Math.floor(i*d.length*.7/n)]/255:.05+.035*Math.sin(i/2.5+t/700);const bh=Math.max(4,v*H*.94),bw=W/n*.6,x=i*W/n+(W/n-bw)/2;
+      const gr=g.createLinearGradient(0,H,0,H-bh);gr.addColorStop(0,'#7c6cff');gr.addColorStop(1,'#ec4899');g.fillStyle=gr;g.beginPath();if(g.roundRect)g.roundRect(x,H-bh,bw,bh,4);else g.rect(x,H-bh,bw,bh);g.fill()}}
+  if(any)vizR=requestAnimationFrame(vizFrame)}
+async function addAudioFile(f,x,y){if(f.size>30e6)return toast('Файл больше 30 МБ — выберите трек поменьше');
+  const ext=(f.name.match(/\.(mp3|m4a|ogg|wav|flac|aac)$/i)?.[1]||(f.type.split('/')[1]||'mp3')).toLowerCase().replace('mpeg','mp3');
+  const hash=hex(await crypto.subtle.digest('SHA-256',await f.arrayBuffer())).slice(0,32)+'.'+ext;await idb.put('images',hash,new Blob([f],{type:mimeOf(hash)}));
+  if(x==null)[x,y]=spotNear(340);return addItem({type:'audio',img:hash,title:f.name.replace(/\.[^.]+$/,''),noFocus:true},x,y)}
+function pickAudio(){const i=h('input',{type:'file',accept:'audio/*,.mp3,.m4a,.ogg,.wav,.flac'});i.onchange=()=>[...i.files].forEach(f=>addAudioFile(f));i.click()}
+
+/* ================= сортировка по важности ================= */
+const zonesOf=B=>live(B).filter(f=>f.type==='frame'&&(f.prio||f.inbox));
+function makeZones(){const[x,y]=freeSpot();return[['inbox','Разобрать',3],['must','Необходимо',2],['should','Менее важно',1],['nope','Не нужно',0]]
+  .map(([p,t,c],i)=>addItem({type:'frame',title:t,c,...(p==='inbox'?{inbox:true}:{prio:p}),w:400,h:560,noFocus:true,noSelect:true},x+i*440,y))}
+function arrangeZones(){const B=board();batch(()=>{const fresh=!zonesOf(B).length;const zs=fresh?makeZones():zonesOf(B);
+  const set=new Set();for(const z of zs)for(const k of frameKids(z))if(isSortable(k))set.add(k);for(const s of selItems())if(isSortable(s))set.add(s);for(const c of live(B))if(isSortable(c)&&c.prio)set.add(c);
+  const cards=[...set];
+  if(cards.length){const old=new Map(cards.map(c=>[c.id,elOf(c.id)?.getBoundingClientRect()]));snap([...cards.map(c=>c.id),...zs.map(z=>z.id)],true);
+    for(const z of zs){const key=z.inbox?'inbox':z.prio;let cy=z.y+70,mw=0;for(const c of cards.filter(c=>(c.prio||'inbox')===key).sort((a,b)=>a.y-b.y||a.x-b.x)){c.x=z.x+20;c.y=Math.round(cy);const r=itemBox(c);cy+=r.h+16;mw=Math.max(mw,r.w);place(elOf(c.id),c);stamp(c)}
+      z.w=Math.max(400,mw+40);z.h=Math.max(300,cy-z.y+20);place(elOf(z.id),z);stamp(z)}
+    const sz=[...zs].sort((a,b)=>a.x-b.x);for(let i=1;i<sz.length;i++){const nx=sz[i-1].x+sz[i-1].w+40,z=sz[i];if(z.x<nx){const dx=nx-z.x,key=z.inbox?'inbox':z.prio;z.x=nx;place(elOf(z.id),z);for(const c of cards)if((c.prio||'inbox')===key){c.x+=dx;place(elOf(c.id),c)}}}
+    touch(B);for(const c of cards)flip(elOf(c.id),old.get(c.id))}
+  drawLinks();zoneCounts();setSel([]);
+  const r=bounds(zs),W=vp.clientWidth,H=vp.clientHeight,s=clamp(Math.min((W-80)/r.w,(H-220)/r.h),.15,1);animateTo({s,x:W/2-(r.x+r.w/2)*s,y:Math.max(90,(H-r.h*s)/2)-r.y*s});
+  toast(cards.length?'Разложено карточек: '+cards.length+' · перетаскивайте между зонами':fresh?'Зоны готовы — перетаскивайте в них карточки или жмите 1, 2, 3 на выделенных':'Выделите карточки или отметьте важность клавишами 1, 2, 3')})}
+function toggleNope(){const on=!document.body.classList.contains('hide-nope');document.body.classList.toggle('hide-nope',on);localStorage.hideNope=on?'1':'0';toast(on?'Карточки «Не нужно» скрыты':'Карточки «Не нужно» снова видны')}
+document.body.classList.toggle('nokinds',localStorage.kinds==='0');document.body.classList.toggle('hide-nope',localStorage.hideNope==='1');
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');

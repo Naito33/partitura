@@ -83,8 +83,29 @@ body.dragging #selbox{opacity:.5}
 body.multi .card.sel{outline-color:color-mix(in srgb,var(--acc) 70%,transparent)}
 .card.flash{animation:flash 1.4s}
 .card:hover{box-shadow:var(--sh),0 0 0 1px var(--line2)}
-.card:not(.sel) :is(.txt,.rt,.ttl,.cap,.url,.field,select,iframe,input[type=range],.lk,.tmin,img),
-body.multi .card :is(.txt,.rt,.ttl,.cap,.url,.field,select,iframe,input[type=range],.lk,.tmin,img){pointer-events:none}
+.card:not(.sel) :is(.txt,.rt,.ttl,.cap,.url,.field,select,input[type=range]:not(.live),.lk,.tmin,img),
+body.multi .card :is(.txt,.rt,.ttl,.cap,.url,.field,select,input[type=range]:not(.live),.lk,.tmin,img){pointer-events:none}
+.card.nohdr .hd{display:none}.card.nohdr:not(.bare) .bd{padding-top:12px}
+.nokinds .card:not(.t-frame):not(.t-embed):not(.t-audio) .hd{display:none}.nokinds .card:not(.t-frame):not(.t-embed):not(.t-audio):not(.bare) .bd{padding-top:12px}
+.kind[contenteditable=true]{outline:1px solid var(--acc);border-radius:4px;padding:0 4px;text-transform:none;letter-spacing:0;opacity:1;cursor:text}
+.prio-b{position:absolute;top:-10px;left:10px;display:flex;align-items:center;gap:5px;padding:2px 9px 2px 7px;border-radius:99px;color:#fff;font-size:11px;font-weight:650;box-shadow:var(--sh);z-index:3;pointer-events:none;animation:popIn .25s var(--ease)}
+.prio-b:before{content:'';width:6px;height:6px;border-radius:50%;background:#fff;opacity:.85}
+.card.p-nope:not(.sel){opacity:.5;filter:saturate(.4)}
+.hide-nope .card.p-nope{display:none}
+.zdot{width:12px;height:12px;border-radius:50%;flex:none}
+.zc{font-size:13px;font-weight:700;color:var(--mut);background:var(--line2);border-radius:99px;padding:1px 9px;margin-left:6px}
+.t-frame.zone{border-style:solid;border-width:2px}
+.t-audio .viz{width:100%;height:64px;display:block;border-radius:10px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 10%,transparent),transparent)}
+.actl{display:flex;align-items:center;gap:8px;margin-top:8px}
+.actl .pp{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--acc),#ec4899);flex:none;transition:transform .15s var(--ease)}
+.actl .pp:active{transform:scale(.9)}
+.actl input[type=range]{flex:1;accent-color:var(--acc);min-width:0}
+.atime{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:76px;text-align:right}
+.eqp{margin-top:10px;padding:10px;border-radius:12px;background:var(--line)}
+.eqb{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;align-items:end;height:112px}
+.eqb label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--mut)}
+.eqb input{writing-mode:vertical-lr;direction:rtl;height:84px;width:22px;accent-color:var(--acc)}
+.eqv{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--mut)}
 .card img{pointer-events:none}
 body.dragging iframe{pointer-events:none}
 .card:not(.sel){cursor:default}
@@ -390,6 +411,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-w
 <dialog id="settings">
   <h3>Настройки</h3>
   <label>Ваше имя — его видят участники команды</label><input id="sName" autocomplete="off" placeholder="Например, Аня">
+  <label class="cbx"><input type="checkbox" id="sKinds"> Показывать подпись типа над карточками («Заметка», «Референс»…)</label>
   <h4>Синхронизация — приватный репозиторий GitHub</h4>
   <ol>
     <li>Приватный репозиторий (например <code>boards-data</code>).</li>
