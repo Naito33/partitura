@@ -1340,6 +1340,48 @@ delete CMDS.skin;CMDS.theme='theme poster|ink — дневной или ночн
   if(lc==='theme'||lc==='skin'){cliPrint(cliPs()+' '+line.trim(),'m');const t=a==='ink'||a==='night'||a==='dark'?'ink':'poster';setTheme(t);cliPrint('тема: '+(t==='ink'?'ночной плакат':'дневной плакат'),'a');return}
   return _run(line)}}
 
+
+/* ================= LIQUID — тёмная доска, градиент, матовое стекло ================= */
+const MOODS={aurora:{l:'Аврора',pv:['#7b5cff','#00c2ff','#ff4fd8']},ember:{l:'Закат',pv:['#ff5a36','#ff2e7e','#ffb347']},toxic:{l:'Кислота',pv:['#9dff3b','#00ffa3','#00a3ff']},ocean:{l:'Океан',pv:['#0047ff','#00e0ff','#4b2bd6']}};
+const LQ_COLORS=['','#ffb86b','#ff6fb5','#a593ff','#5fd8ff','#5cf2b0','#ffe36e','#ff6b6b'];
+const lqBg=h('div',{id:'lqBg'});lqBg.innerHTML='<i></i><i></i><i></i><i></i>';document.body.prepend(lqBg);
+document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="lqGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--acc2)"/></linearGradient></defs></svg>');
+(()=>{const b=$('#brand');if(b&&!b.querySelector('.asc'))b.append(h('pre',{className:'asc'},banner('PARTITURA')))})();
+if(localStorage.themeV!=='4'){localStorage.themeV='4';localStorage.theme='liquid';localStorage.mood=localStorage.mood||'aurora'}
+setTheme=function(){const r=document.documentElement,m=MOODS[localStorage.mood]?localStorage.mood:'aurora';
+  r.dataset.theme='liquid';r.dataset.mood=m;r.classList.remove('tk','nosun');r.classList.add('lq');delete r.dataset.skin;localStorage.theme='liquid';
+  r.classList.toggle('calm',localStorage.lqMove==='0');COLORS.splice(0,COLORS.length,...LQ_COLORS);
+  const tb=$('#themeBtn');tb.innerHTML=ic('palette');tb.title='Настроение фона: '+MOODS[m].l;
+  document.querySelector('meta[name=theme-color]').content='#06070b';document.body.classList.remove('crt');
+  document.querySelectorAll('.lqmood button').forEach(x=>x.classList.toggle('on',x.dataset.k===m));
+  if(board()){renderBoard();drawLinks();scheduleMinimap()}};
+function setMood(m){localStorage.mood=m;setTheme('liquid');toast('Фон: '+MOODS[m].l)}
+$('#themeBtn').onclick=()=>{const ks=Object.keys(MOODS);setMood(ks[(ks.indexOf(localStorage.mood)+1)%ks.length])};
+/* загрузка приложения — как в хакерской версии */
+{const _bs=bootScreen;bootScreen=function(){if(localStorage.bootOff==='1'){sessionStorage.booted=1;return}const t=localStorage.theme;localStorage.theme='term';try{_bs()}finally{localStorage.theme=t}}}
+/* загрузка доски */
+let lqBootDone=false,lqLoadT=0;
+{const _ob=openBoard;openBoard=function(id){const first=!lqBootDone;lqBootDone=true;_ob(id);if(first||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const b=boards[id];if(!b)return;const n=live(b).filter(x=>!x.type.startsWith('_')).length;$('#bload')?.remove();clearTimeout(lqLoadT);
+  const el=h('div',{id:'bload'});document.body.append(el);const cards=$('#cards');cards.classList.add('loading');
+  const W=18,t0=performance.now(),dur=420,name=(b.title||'без названия').slice(0,28);
+  const tick=()=>{const p=Math.min(1,(performance.now()-t0)/dur),f=Math.round(p*W);
+    el.innerHTML=`<b>&gt;</b> cd ~/boards/${esc(name)}\n<span class="p">[${'█'.repeat(f)}${'░'.repeat(W-f)}]</span> ${String(Math.round(p*100)).padStart(3)}%  ${n} ${plural(n,'карточка','карточки','карточек')}`;
+    if(p<1)requestAnimationFrame(tick);else{cards.classList.remove('loading');lqLoadT=setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),260)},120)}};tick();setTimeout(()=>{cards.classList.remove('loading');el.remove()},1500)}}
+/* настройки */
+(()=>{for(const l of document.querySelectorAll('#settings label'))if(/солнце/i.test(l.textContent))l.remove();
+  const host=$('#sPlate')?.closest('label');if(!host)return;
+  const moods=h('div',{className:'lqmood'},...Object.entries(MOODS).map(([k,s])=>{const b=h('button',{type:'button',title:s.l,onclick:()=>setMood(k)},h('i',{style:`background:linear-gradient(135deg,${s.pv.join(',')})`}),h('span',{},s.l));b.dataset.k=k;return b}));
+  const mv=h('label',{className:'cbx'},h('input',{type:'checkbox',checked:localStorage.lqMove!=='0',onchange:e=>{localStorage.lqMove=e.target.checked?'1':'0';document.documentElement.classList.toggle('calm',!e.target.checked)}}),' Плавное движение градиента на фоне');
+  const bt=h('label',{className:'cbx'},h('input',{type:'checkbox',checked:localStorage.bootOff!=='1',onchange:e=>{localStorage.bootOff=e.target.checked?'0':'1'}}),' ASCII-заставка при запуске');
+  host.before(h('div',{},h('label',{},'Настроение фона'),moods),mv,bt)})();
+CMDS.theme='theme aurora|ember|toxic|ocean — настроение фона';
+{const _run=cliRun;cliRun=function(line){const[c,a]=line.trim().split(/\s+/);const lc=c?.toLowerCase();
+  if(lc==='theme'||lc==='mood'){cliPrint(cliPs()+' '+line.trim(),'m');if(!MOODS[a]){cliPrint('theme '+Object.keys(MOODS).join('|'),'e');return}setMood(a);cliPrint('фон: '+MOODS[a].l,'a');return}
+  if(lc==='boot'){cliPrint(cliPs()+' boot','m');sessionStorage.removeItem('booted');const o=localStorage.bootOff;localStorage.bootOff='0';bootScreen();localStorage.bootOff=o;return}
+  return _run(line)}}
+CMDS.boot='boot — показать заставку загрузки';
+
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
