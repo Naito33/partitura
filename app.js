@@ -184,7 +184,7 @@ function startMarquee(e){const add=e.shiftKey,base=add?new Set(selSet):new Set()
     const x0=Math.min(sx,ev.clientX),y0=Math.min(sy,ev.clientY),x1=Math.max(sx,ev.clientX),y1=Math.max(sy,ev.clientY);
     m.hidden=false;Object.assign(m.style,{left:x0+'px',top:y0+'px',width:x1-x0+'px',height:y1-y0+'px'});
     const a=toWorld(x0,y0),b=toWorld(x1,y1),ids=new Set(base);
-    for(const it of live(board())){const r=itemBox(it);const ok=it.type==='frame'?r.x>=a.x&&r.y>=a.y&&r.x+r.w<=b.x&&r.y+r.h<=b.y:r.x<b.x&&r.x+r.w>a.x&&r.y<b.y&&r.y+r.h>a.y;if(ok)ids.add(it.id)}
+    for(const it of live(board())){const r=itemBox(it);if(it.type==='pin'&&it.on)continue;const ok=it.type==='frame'?r.x>=a.x&&r.y>=a.y&&r.x+r.w<=b.x&&r.y+r.h<=b.y:r.x<b.x&&r.x+r.w>a.x&&r.y<b.y&&r.y+r.h>a.y;if(ok)ids.add(it.id)}
     setSel([...ids])},()=>{m.hidden=true;if(!moved&&!add)setSel([])},()=>m.hidden=true)}
 
 /* ================= выделение ================= */
@@ -203,7 +203,7 @@ function updateSelUI(){const sb=$('#selbox'),cx=$('#ctx');const its=selItems();
   const bt=bendTarget();let bp=null;if(bt){if(selConn)bp=connMid[selConn];else{const p=bt.pts;bp=bt.bend?{x:bt.x+bt.bend[0],y:bt.y+bt.bend[1]}:{x:bt.x+(p[0][0]+p[1][0])/2,y:bt.y+(p[0][1]+p[1][1])/2}}}
   bendH.hidden=!bp;if(bp){bendH.style.left=bp.x+'px';bendH.style.top=bp.y+'px'}
   if(!its.length&&!selConn){sb.hidden=true;cx.hidden=true;return}
-  let r;if(its.length){r=bounds(its);const pad=its.length===1&&its[0].type==='pin'?4:0;sb.hidden=false;
+  let r;if(its.length){r=bounds(its);const pad=0;sb.hidden=its.every(i=>i.type==='pin');
     Object.assign(sb.style,{left:r.x-pad-3/view.s+'px',top:r.y-pad-3/view.s+'px',width:r.w+2*pad+6/view.s+'px',height:r.h+2*pad+6/view.s+'px'});sb.style.rotate=its.length===1&&its[0].rot?its[0].rot+'rad':''}
   else{sb.hidden=true;const m=connMid[selConn];if(!m){cx.hidden=true;return}r={x:m.x,y:m.y,w:0,h:0}}
   if(!cx.childElementCount){cx.hidden=true;return}cx.hidden=false;
@@ -576,9 +576,9 @@ function menu(x,y,items,up){closePops();const m=h('div',{className:'pop glass'})
   for(const i of items){if(i==='-'){m.append(h('div',{className:'psep'}));continue}if(i.head){m.append(h('div',{className:'phd'},i.head));continue}
     m.append(h('button',{className:i.danger?'danger':'',innerHTML:ic(i.icon,17)+`<span>${esc(i.label)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</span>`,onclick:()=>{closePops();i.fn()}}))}
   document.body.append(m);posPop(m,x,up?y-m.offsetHeight:y);return m}
-function showAddMenu(x,y,at,up){menu(x,y,[{icon:'text',label:'Текст без подложки',fn:()=>addOfType('text',at)},...Object.entries(TYPES).filter(([k])=>!['draw','pin','embed'].includes(k)).map(([k,t])=>({icon:t.icon,label:t.name,fn:()=>addOfType(k,at)}))],up)}
+function showAddMenu(x,y,at,up){menu(x,y,[{icon:'text',label:'Текст без подложки',fn:()=>addOfType('text',at)},{icon:'term',label:'ASCII-арт…',sub:'Галерея, текст и картинки в символы',fn:()=>asciiMenu(x,y,up)},...Object.entries(TYPES).filter(([k])=>!['draw','pin','embed'].includes(k)).map(([k,t])=>({icon:t.icon,label:t.name,fn:()=>addOfType(k,at)}))],up)}
 function showCanvasMenu(x,y){const at=toWorld(x,y);menu(x,y,[{head:'Добавить'},...['sticky','note','todo','image','frame'].map(k=>({icon:TYPES[k].icon,label:TYPES[k].name,fn:()=>addOfType(k,at)})),
-  {icon:'more',label:'Другие карточки…',fn:()=>showAddMenu(x,y,at)},'-',{icon:'check',label:'Сортировка по важности',sub:'Разложить по зонам',fn:arrangeZones},
+  {icon:'more',label:'Другие карточки…',fn:()=>showAddMenu(x,y,at)},'-',{icon:'check',label:'Сортировка по важности',sub:'Разложить по зонам',fn:arrangeZones},{icon:'term',label:'ASCII-арт…',fn:()=>asciiMenu(x,y)},
   {icon:'frame',label:'Показ разделов как слайдов',sub:'← → — листать, Esc — выход',fn:startPresent},
   {icon:'layer',label:document.body.classList.contains('hide-nope')?'Показать «Не нужно»':'Скрыть «Не нужно»',fn:toggleNope},'-',{icon:'cursor',label:'Выделить всё',fn:()=>setSel(live(board()).map(i=>i.id))},{icon:'fit',label:'Показать всё',fn:()=>fitView(true,true)}])}
 function showCardMenu(x,y){const its=selItems();if(!its.length)return;const one=its.length===1?its[0]:null;
@@ -622,7 +622,7 @@ function buildCtx(){const c=$('#ctx');c.textContent='';const B=board();if(!B)ret
   if(T==='shape')add(ibtn('shapes','Форма',e=>{const r=e.currentTarget.getBoundingClientRect();menu(r.left,r.bottom+6,Object.entries(SHAPES).map(([k,l])=>({icon:'shapes',label:l,fn:()=>setAll(x=>x.kind=k)})))}),
     ibtn('layer',one.nofill?'Залить':'Без заливки',()=>setAll(x=>x.nofill=!x.nofill)),sep());
   if(its.every(x=>x.type==='note'||x.type==='image'))add(h('button',{className:'cb wide',title:'Подложка карточки',innerHTML:ic('layer',15)+(its[0].bare?'Подложка':'Без подложки'),onclick:()=>{const v=!its[0].bare;setAll(x=>{if(v)x.bare=true;else delete x.bare})}}),sep());
-  if(T==='image')add(ibtn('crop','Обрезать',()=>startCrop(one)),ibtn('palette','Палитра из картинки',()=>paletteFromImage(one)),ibtn('ext','Открыть',async()=>{const u=one.src||await imgURL(one.img);if(u)window.open(u,'_blank')}),sep());
+  if(T==='image')add(ibtn('crop','Обрезать',()=>startCrop(one)),ibtn('term','В ASCII-арт',e=>{const r=e.currentTarget.getBoundingClientRect();asciiMenu(r.left,r.bottom+6)}),ibtn('palette','Палитра из картинки',()=>paletteFromImage(one)),ibtn('ext','Открыть',async()=>{const u=one.src||await imgURL(one.img);if(u)window.open(u,'_blank')}),sep());
   if(T==='embed'||T==='link')add(ibtn('ext','Открыть',()=>window.open(one.url,'_blank','noopener')),sep());
   const inkMode=its.every(i=>i.type==='draw'||i.type==='pin')?true:its.every(i=>i.bare&&i.type==='note')?'tc':false;add(ibtn('drop',inkMode==='tc'?'Цвет текста':'Цвет',e=>colorPop(e.currentTarget,its,inkMode)));
   if(its.some(isSortable)||T==='frame'){const pb=ibtn('check',T==='frame'?'Сделать зоной сортировки':'Важность (клавиши 1, 2, 3, 0)',e=>prioMenu(e.currentTarget,its));const pr=PRIO[one?.prio];if(pr&&T!=='frame'){pb.style.color=pr.c}add(pb)}
@@ -702,8 +702,8 @@ function paintMeta(){const b=board();if(!b)return;const votes={},cm={},mine={};
 let pickAt=null;
 async function storeImage(file){const bmp=await createImageBitmap(file);let w=bmp.width,hh=bmp.height;const k=Math.min(1,1600/Math.max(w,hh));w=Math.round(w*k);hh=Math.round(hh*k);
   const c=document.createElement('canvas');c.width=w;c.height=hh;c.getContext('2d').drawImage(bmp,0,0,w,hh);
-  let blob=await new Promise(r=>c.toBlob(r,'image/webp',.85));if(!blob||blob.type!=='image/webp')blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));
-  const hash=hex(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())).slice(0,32)+(blob.type==='image/webp'?'.webp':'.jpg');
+  let blob=await new Promise(r=>c.toBlob(r,'image/webp',.86));if(!blob||blob.type!=='image/webp')blob=await new Promise(r=>c.toBlob(r,/png|gif|webp|svg/.test(file.type||'')?'image/png':'image/jpeg',.88));
+  const hash=hex(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())).slice(0,32)+(blob.type==='image/webp'?'.webp':blob.type==='image/png'?'.png':'.jpg');
   await idb.put('images',hash,blob);return{img:hash,ar:hh/w,w:Math.min(300,w)}}
 async function addImageFile(file,x,y){try{const d=await storeImage(file);return addItem({type:'image',cap:'',...d,bare:localStorage.imgPlate!=='1',noFocus:true},x,y)}catch(err){console.error(err);toast('Не удалось добавить картинку')}}
 async function addImageURL(url,x,y){try{const r=await fetch(url,{mode:'cors'});if(!r.ok)throw 0;return await addImageFile(await r.blob(),x,y)}

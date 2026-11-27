@@ -320,6 +320,7 @@ function renderInspire(body){const tile=(icon,t,s,fn)=>h('button',{className:'ti
     h('div',{className:'sec'},'Техники'),h('div',{className:'grid2'},
       tile('dice','SCAMPER','7 вопросов, чтобы развить идею',INSP.scamper),tile('user','Шесть шляп','Посмотреть с 6 сторон',INSP.hats),
       tile('timer','Crazy 8s','8 идей за 8 минут + таймер',INSP.crazy8),tile('reset','Обратный штурм','Как всё испортить — и перевернуть',INSP.reverse),
+      tile('term','ASCII-арт','Галерея, текст и картинки в символы',e=>{const r=e.currentTarget.getBoundingClientRect();asciiMenu(r.left,r.bottom+4)}),
       tile('bulb','Случайные слова','3 ассоциации для неожиданных связей',INSP.words),tile('msg','Вопрос-подсказка','Творческий вопрос на стикере',INSP.prompt)),
     h('div',{className:'sec'},'Таймер для команды'),h('div',{className:'filters'},...[5,10,25].map(m=>h('button',{className:'chip',onclick:()=>INSP.timer(m)},m===25?'25 мин · помидор':m+' мин'))));
   const q=h('input',{value:topicOf(),placeholder:'Что ищем?'});
@@ -527,7 +528,7 @@ function showCursor(pid,name,m){let c=RT.curs[pid];if(m.b!==cur){if(c)c.el.style
 function rtCursorsClear(){for(const c of Object.values(RT.curs))c.el.style.opacity=0}
 
 /* ================= настройки, импорт/экспорт, верхняя панель ================= */
-function openSettings(){$('#sCrt').checked=localStorage.crt!=='0';$('#sPlate').checked=localStorage.imgPlate==='1';$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
+function openSettings(){$('#sCrt').checked=localStorage.crt==='1';$('#sPlate').checked=localStorage.imgPlate==='1';$('#sKinds').checked=localStorage.kinds!=='0';$('#sName').value=me();$('#sOwner').value=cfg.owner||'';$('#sRepo').value=cfg.repo||'';$('#sToken').value=cfg.token||'';$('#sLive').checked=liveOn();
   const a=aiCfg();$('#sAiKey').value=a.key||'';$('#sAiModel').value=a.model||'claude-opus-5-5';$('#setMsg').textContent='';$('#settings').showModal()}
 $('#sClose').onclick=()=>$('#settings').close();
 $('#sOff').onclick=()=>{cfg={};localStorage.cfg='{}';rtStop();setSync('off');$('#settings').close();toast('Синхронизация отключена')};
@@ -868,7 +869,7 @@ if(localStorage.themeV!=='2'){localStorage.theme='term';localStorage.themeV='2'}
 setTheme=function(t){if(!THEMES.includes(t))t='term';document.documentElement.dataset.theme=t;localStorage.theme=t;const nx=THEMES[(THEMES.indexOf(t)+1)%3];
   $('#themeBtn').innerHTML=ic(nx==='light'?'sun':nx==='dark'?'moon':'term');$('#themeBtn').title=`Тема: ${THN[t]} → ${THN[nx]}`;
   document.querySelector('meta[name=theme-color]').content={term:'#040804',dark:'#0d0e12',light:'#f2f3f7'}[t];if(t==='term')ensureFont('mono');
-  document.body.classList.toggle('crt',t==='term'&&localStorage.crt!=='0');drawLinks();if(typeof scheduleMinimap==='function')scheduleMinimap()};
+  document.body.classList.toggle('crt',t==='term'&&localStorage.crt==='1');drawLinks();if(typeof scheduleMinimap==='function')scheduleMinimap()};
 ICONS.term=P('m4 17 6-6-6-6|M12 19h8');
 const LOGO_SVG=(s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="20" height="18" rx="2.5"/><path d="M5 8h14M5 11h14M5 14h14M5 17h14" opacity=".28"/><path d="m6.5 9.5 3 2.5-3 2.5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 15.5h5" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 (()=>{const b=h('div',{id:'brand',title:'Partitura'});b.innerHTML=LOGO_SVG()+'<span>partitura<i class="cur"></i></span>';$('#menuBtn').after(b)})();
@@ -890,6 +891,111 @@ function bootScreen(){if(sessionStorage.booted||localStorage.theme!=='term')retu
   setTimeout(step,250);el.addEventListener('click',close);addEventListener('keydown',close,true)}
 function emptyHint(){let e=$('#emptyHint');const b=board();const show=b&&!live(b).length;if(!show){e?.remove();return}if(e)return;
   e=h('pre',{id:'emptyHint'});e.innerHTML=esc(asciiBox(['> доска пуста_','','[N] стикер   [T] текст   [F] раздел','[D] фигуры и диаграммы   [I] пин','двойной клик — добавить что угодно','Ctrl+V — картинка, ссылка, видео','колесо — зум, зажатое колесо — камера'])).replace('пуста_','пуста<i class="cur"></i>');document.body.append(e)}
+
+
+/* ================= ASCII-арт ================= */
+const ASCII_ART={
+'Котик':String.raw` /\_/\
+( o.o )
+ > ^ <`,
+'Кот на заборе':String.raw`      |\      _,,,---,,_
+ZZZzz /,'.-'' -.  ;-;;,_
+     |,4-  ) )-,_. ,\ (  '-'
+    '---''(_/--'  '-'\_)`,
+'Сова':String.raw`  ,_,
+ (O,O)
+ (   )
+ -"-"-`,
+'Кролик':String.raw` (\(\
+ ( -.-)
+ o_(")(")`,
+'Кофе':String.raw`    ( (
+     ) )
+  ........
+  |      |]
+  \      /
+   '----'`,
+'Ракета':String.raw`     /\
+    /  \
+   |    |
+   | <> |
+   |    |
+  /| /\ |\
+ / |/  \| \
+    ^^^^`,
+'Горы':String.raw`          /\
+     /\  /  \      /\
+    /  \/    \    /  \
+   /    \     \  /    \
+  /      \     \/      \
+ ~~~~~~~~~~~~~~~~~~~~~~~~`,
+'Сердце':String.raw`  .:::.   .:::.
+ :::::::.:::::::
+ :::::::::::::::
+ ':::::::::::::'
+   ':::::::::'
+     ':::::'
+       ':'`,
+'Ноты':String.raw`  ___________________
+ |-----|----------|--|
+ |-----O----|-----|--|
+ |----------O----(_)-|
+ |--(_)--------------|
+ |___________________|`,
+'Терминал':String.raw` .----------------------.
+ | $ partitura --start  |
+ | > загружаю идеи...   |
+ | > готово_            |
+ '----------------------'
+      _|__________|_
+     /______________\ `,
+'Лампочка-идея':String.raw`     .-.
+    (   )
+     '-'
+     |=|
+     |=|
+    '---'`,
+'Призрак':String.raw`   .-.
+  (o o)
+  | O \
+   \   \
+    '~~~'`,
+'Разделитель':'══════════════ ✦ ══════════════',
+'Заголовок-рамка':String.raw`╔══════════════════════════╗
+║        ЗАГОЛОВОК         ║
+╚══════════════════════════╝`,
+'Чек-лист':String.raw`[x] идея
+[x] референсы
+[ ] прототип
+[ ] запуск`,
+'Стрелки':'──►   ◄──   ▲   ▼   ═══►   ◄═══',
+};
+function addAscii(text,x,y,fs=13){const lines=text.split('\n'),w=Math.max(...lines.map(l=>[...l].length));
+  if(x==null)[x,y]=spotNear(w*fs*.62);
+  return addItem({type:'note',bare:true,ff:'mono',nw:1,fs,lh:1.12,html:esc(text).replace(/\n/g,'<br>'),w:Math.max(40,Math.round(w*fs*.62+14)),noFocus:true},x,y)}
+const BRAILLE=[[0x01,0x08],[0x02,0x10],[0x04,0x20],[0x40,0x80]];
+function rasterToAscii(get,W,H,style,inv){const out=[];
+  if(style==='braille'){for(let y=0;y<H;y+=4){let row='';for(let x=0;x<W;x+=2){let c=0;for(let dy=0;dy<4;dy++)for(let dx=0;dx<2;dx++)if(get(x+dx,y+dy)>.5)c|=BRAILLE[dy][dx];row+=String.fromCharCode(0x2800+c)}out.push(row)}}
+  else{const ramp=style==='blocks'?' ░▒▓█':style==='solid'?' █':' .:-=+*#%@';for(let y=0;y<H;y+=2){let row='';for(let x=0;x<W;x++){const v=(get(x,y)+get(x,y+1))/2;row+=ramp[Math.min(ramp.length-1,Math.floor(v*ramp.length*.999))]}out.push(row)}}
+  while(out.length&&!out[0].replace(/[\s⠀]/g,''))out.shift();while(out.length&&!out[out.length-1].replace(/[\s⠀]/g,''))out.pop();
+  let L=Infinity,R=0;for(const r of out){const m=r.match(/^[\s⠀]*/)[0].length,t=r.replace(/[\s⠀]+$/,'').length;if(t>m){L=Math.min(L,m);R=Math.max(R,t)}}
+  return out.map(r=>r.slice(L===Infinity?0:L,R).replace(/[\s⠀]+$/,'')).join('\n')}
+function textToAscii(text,style='solid'){const fs=style==='braille'?28:16,c=document.createElement('canvas'),g=c.getContext('2d');g.font=`900 ${fs}px "Segoe UI",Arial,sans-serif`;
+  const lines=text.split('\n');const W=Math.ceil(Math.max(...lines.map(l=>g.measureText(l).width)))+4,H=Math.ceil(fs*1.25*lines.length)+4;c.width=W;c.height=H;
+  g.font=`900 ${fs}px "Segoe UI",Arial,sans-serif`;g.textBaseline='top';g.fillStyle='#000';lines.forEach((l,i)=>g.fillText(l,2,2+i*fs*1.25));
+  const d=g.getImageData(0,0,W,H).data,get=(x,y)=>x<W&&y<H?d[(y*W+x)*4+3]/255:0;return rasterToAscii(get,W,H,style)}
+async function imageToAscii(it,style='ramp',cols=90){const u=it.src||await imgURL(it.img);if(!u)return null;const im=new Image();im.crossOrigin='anonymous';im.src=u;await im.decode();
+  const c=it.crop||{x:0,y:0,w:1,h:1};const sw=im.naturalWidth*c.w,sh=im.naturalHeight*c.h;const W=style==='braille'?cols*2:cols,H=Math.round(W*sh/sw*(style==='braille'?1:1));
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');g.drawImage(im,im.naturalWidth*c.x,im.naturalHeight*c.y,sw,sh,0,0,W,H);
+  const d=g.getImageData(0,0,W,H).data;const dark=document.documentElement.dataset.theme!=='light';
+  let lo=1,hi=0;const lum=new Float32Array(W*H);for(let i=0;i<W*H;i++){const a=d[i*4+3]/255;const l=(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2])/255;lum[i]=a<.1?(dark?0:1):l;lo=Math.min(lo,lum[i]);hi=Math.max(hi,lum[i])}
+  const get=(x,y)=>{if(x>=W||y>=H)return 0;let v=(lum[y*W+x]-lo)/((hi-lo)||1);return dark?v:1-v};return rasterToAscii(get,W,H,style==='braille'?'braille':style)}
+function asciiMenu(x,y,up){const img=selItems().find(i=>i.type==='image');
+  menu(x,y,[{head:'ASCII-арт'},{icon:'text',label:'Текст → ASCII',sub:'Любой текст крупными символами',fn:()=>{const t=prompt('Текст для ASCII-баннера (можно по-русски):',board()?.title||'partitura');if(!t)return;
+      menu(x,y,[{head:'Стиль'},...[['solid','Блоки █'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — тонко и чётко'],['ramp','Символы .:-=+#@']].map(([s,l])=>({icon:'text',label:l,fn:()=>addAscii(textToAscii(t,s),null,null,s==='braille'?12:9)}))],up)}},
+    {icon:'image',label:'Картинка → ASCII',sub:img?'Из выделенной картинки':'Сначала выделите картинку',fn:()=>{if(!img)return toast('Выделите картинку на доске');
+      menu(x,y,[{head:'Стиль'},...[['ramp','Символы .:-=+#@'],['blocks','Градиент ░▒▓█'],['braille','Брайль ⣿ — максимум деталей']].map(([s,l])=>({icon:'image',label:l,fn:async()=>{try{const t=await imageToAscii(img,s);const el=elOf(img.id);addAscii(t,img.x+(el?.offsetWidth||img.w)+40,img.y,s==='braille'?8:7)}catch{toast('Не получилось прочитать картинку')}}}))],up)}},
+    {head:'Галерея'},...Object.keys(ASCII_ART).map(k=>({icon:'term',label:k,fn:()=>addAscii(ASCII_ART[k])}))],up)}
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
