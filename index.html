@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#040804">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>Partitura</title>
@@ -450,6 +450,48 @@ html #boot pre,html #boot .sub,html #boot .log{position:relative}
 [data-theme=term][data-skin=dash] .win-h{border-bottom:0}
 [data-theme=term][data-skin=dash] .win-h b{font-size:16px;font-weight:600}
 [data-theme=term][data-skin=dash] .sep{border-left:1px solid var(--line2)}
+/* --- САКУРА: единый стиль — Япония × киберпанк × терминал --- */
+[data-skin=sakura]{--hud:#ff7eb6;--hud2:#5ef2ff}
+[data-theme=term][data-skin=sakura]{--fd:"Dela Gothic One","Unbounded",sans-serif;--bg:#0b0710;--card:#150d19;--card2:#1d1322;--tx:#f7e9f0;--mut:#a88c9c;
+  --line:rgba(255,126,182,.13);--line2:rgba(255,126,182,.26);--glass:rgba(19,11,23,.9);--dot:rgba(255,126,182,.11);
+  --corners:linear-gradient(var(--acc),var(--acc)) left top/9px 1.5px no-repeat,linear-gradient(var(--acc),var(--acc)) left top/1.5px 9px no-repeat,linear-gradient(var(--hud2),var(--hud2)) right bottom/9px 1.5px no-repeat,linear-gradient(var(--hud2),var(--hud2)) right bottom/1.5px 9px no-repeat;
+  --sak:linear-gradient(90deg,#ffb3d1,#ff7eb6 45%,#5ef2ff)}
+[data-theme=term][data-skin=sakura] body{background:radial-gradient(1200px 700px at 85% 110%,rgba(255,79,154,.13),transparent 60%),radial-gradient(900px 600px at 0% -10%,rgba(94,242,255,.07),transparent 60%),var(--bg)}
+[data-theme=term][data-skin=sakura] .glass{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+[data-theme=term][data-skin=sakura] :is(.glass,.card:not(.t-draw):not(.t-pin):not(.t-lens):not(.bare):not(.t-heading),dialog,.win,.pop,#cli){border-radius:16px!important}
+[data-theme=term][data-skin=sakura] :is(.btn,.chip,.badge,.lnk-b,.prio-b){border-radius:999px!important}
+[data-theme=term][data-skin=sakura] :is(.tool,.cb,.mi,.pop>button,.tile,.bi,input,select,textarea,.kt,.kc,.sum,.ctx2,.lk,.imw,.fbtn,.agsw,#zoom button){border-radius:10px!important}
+[data-theme=term][data-skin=sakura] :is(.win,#cli,dialog):before{display:none}
+[data-theme=term][data-skin=sakura] .win-h{background:linear-gradient(90deg,#ff7eb6,#ff4f9a 55%,#b86bff);margin:-1px -1px 8px;padding:10px 10px 9px 16px;border:0;border-radius:16px 16px 0 0}
+[data-theme=term][data-skin=sakura] .win-h :is(b,b:before,b:after,.cb){color:#16060f!important}
+[data-theme=term][data-skin=sakura] .win-h b{font-family:var(--fd);font-weight:400;font-size:15px;letter-spacing:.04em}
+[data-theme=term][data-skin=sakura] dialog h3{font-family:var(--fd);font-weight:400;background:var(--sak);-webkit-background-clip:text;background-clip:text;color:transparent}
+[data-theme=term][data-skin=sakura] #brand{font-family:var(--fd);font-weight:400;font-size:17px;letter-spacing:.05em}
+[data-theme=term][data-skin=sakura] #brand span{background:var(--sak);-webkit-background-clip:text;background-clip:text;color:transparent}
+[data-theme=term][data-skin=sakura] .kind{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);border-radius:999px;padding:2px 8px;opacity:1}
+[data-theme=term][data-skin=sakura] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-sticky){border-color:rgba(255,126,182,.22);box-shadow:0 14px 40px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04)}
+[data-theme=term][data-skin=sakura] .card:not(.bare):not(.t-heading):hover{box-shadow:0 0 0 1px rgba(255,126,182,.45),0 0 26px -8px rgba(255,126,182,.6)!important}
+[data-theme=term][data-skin=sakura] :is(.t-sticky,.t-sticky.tint){background:var(--hue,#ffb7d0)!important;border-radius:16px!important;color:#1a0b13;box-shadow:0 18px 36px -18px color-mix(in srgb,var(--hue,#ff7eb6) 70%,transparent)!important}
+[data-theme=term][data-skin=sakura] .t-sticky .txt{color:#1a0b13;font-family:"Unbounded",sans-serif;font-weight:500;font-size:16px;letter-spacing:-.01em}
+[data-theme=term][data-skin=sakura] .t-sticky .kind{background:rgba(0,0,0,.12);color:#1a0b13}
+[data-theme=term][data-skin=sakura] :is(.t-heading .txt,.t-frame .ttl){font-family:var(--fd);font-weight:400;letter-spacing:.01em}
+[data-theme=term][data-skin=sakura] .t-heading .txt{font-size:46px;line-height:1.05;background:var(--sak);-webkit-background-clip:text;background-clip:text;color:transparent;caret-color:#ff7eb6;filter:drop-shadow(0 0 18px rgba(255,126,182,.25))}
+[data-theme=term][data-skin=sakura] .t-frame{border-radius:22px!important;border-color:rgba(255,126,182,.3)}
+[data-theme=term][data-skin=sakura] :is(.t-progress .big,.dl-big,.tm,.sum b){font-family:var(--fd);font-weight:400;color:var(--acc);text-shadow:0 0 16px rgba(255,126,182,.4)}
+[data-theme=term][data-skin=sakura] .fill{background:linear-gradient(90deg,#ff7eb6,#5ef2ff)!important;border-radius:99px;box-shadow:0 0 12px rgba(255,126,182,.5)}
+[data-theme=term][data-skin=sakura] .bar{border-radius:99px;background:rgba(255,126,182,.1)}
+[data-theme=term][data-skin=sakura] .tool.on{background:linear-gradient(135deg,#ff7eb6,#ff4f9a);color:#16060f;box-shadow:0 0 18px -2px rgba(255,79,154,.7)}
+[data-theme=term][data-skin=sakura] .btn.pri{background:linear-gradient(135deg,#ff7eb6,#ff4f9a);color:#16060f;border-color:transparent}
+[data-theme=term][data-skin=sakura] :is(.chip.on,.tabs button.on){background:var(--acc);color:#16060f}
+[data-theme=term][data-skin=sakura] .hdl{background:#fff;border-color:var(--acc);border-radius:50%}
+[data-theme=term][data-skin=sakura] #barcode{display:block;background:repeating-linear-gradient(90deg,var(--acc) 0 1px,transparent 1px 3px,var(--acc) 3px 5px,transparent 5px 6px,var(--hud2) 6px 7px,transparent 7px 10px,var(--acc) 10px 13px,transparent 13px 14px)}
+#sakuraFx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none}
+[data-theme=term][data-skin=sakura] #sakuraFx{display:block}
+#sakuraFx canvas{position:absolute;inset:0;width:100%;height:100%}
+#sakuraFx .kj{position:absolute;right:3vw;bottom:9vh;font:400 min(34vw,380px)/1 "Dela Gothic One","Yu Gothic",sans-serif;color:transparent;-webkit-text-stroke:1.5px rgba(255,126,182,.12);writing-mode:vertical-rl;letter-spacing:-.05em;user-select:none}
+#sakuraFx .vt{position:absolute;left:14px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font:11px/1 "JetBrains Mono",monospace;letter-spacing:.5em;color:rgba(94,242,255,.35)}
+@media (max-width:800px){#sakuraFx .vt{display:none}}
+
 .skinsw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
 .skinsw button{text-align:left;padding:10px;border:1px solid var(--line2);display:flex;flex-direction:column;gap:6px;font-size:12.5px}
 .skinsw button.on{outline:2px solid var(--acc);outline-offset:1px}

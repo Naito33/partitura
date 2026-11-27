@@ -1271,6 +1271,31 @@ CMDS.skin='skin orange|retro|crt|dash|hud — стиль темы';
 {const _run=cliRun;cliRun=function(line){const[c,a]=line.trim().split(/\s+/);if(c?.toLowerCase()==='skin'){cliPrint(cliPs()+' '+line.trim(),'m');if(!SKINS[a]){cliPrint('skin '+Object.keys(SKINS).join('|'),'e');return}
   localStorage.skin=a;if(document.documentElement.dataset.theme!=='term')setTheme('term');else applySkin(true);cliPrint('стиль: '+SKINS[a].l,'a');return}return _run(line)}}
 
+
+/* ================= единый стиль «Сакура» ================= */
+{const S={sakura:{l:'Сакура',d:'Фирменный: Япония × киберпанк × терминал, падающие лепестки',pv:['#ff7eb6','#5ef2ff','#c9b6ff','#0b0710'],colors:['','#ffb7d0','#9ff3ff','#c9b6ff','#ffc9a8','#b8f5d0','#ff6b9a','#f3e8ee']}};
+  const rest={...SKINS};for(const k in SKINS)delete SKINS[k];Object.assign(SKINS,S,rest)}
+if(localStorage.skinV!=='2'){localStorage.skinV='2';localStorage.skin='sakura'}
+CMDS.skin='skin sakura|orange|retro|crt|dash|hud — стиль темы';
+(()=>{const box=$('.skinsw');if(!box)return;const s=SKINS.sakura;
+  const b=h('button',{type:'button',onclick:()=>{localStorage.skin='sakura';if(document.documentElement.dataset.theme!=='term')setTheme('term');else applySkin(true);toast('Стиль: '+s.l)}},
+    h('div',{className:'pv'},...s.pv.map(c=>h('i',{style:`background:${c}`}))),h('b',{},s.l),h('small',{},s.d));b.dataset.k='sakura';b.style.gridColumn='1/-1';box.prepend(b)})();
+/* падающие лепестки */
+const sakuraFx=(()=>{const wrap=h('div',{id:'sakuraFx'}),cv=h('canvas'),kj=h('div',{className:'kj'},'桜'),vt=h('div',{className:'vt'},'サクラ // NETRUNNER // パルティトゥーラ');
+  wrap.append(cv,kj,vt);document.body.prepend(wrap);const ctx=cv.getContext('2d');let P=[],raf=0,W=0,H=0,dpr=1;
+  const mkP=top=>({x:Math.random()*W,y:top?-20-Math.random()*H*.3:Math.random()*H,s:5+Math.random()*7,vy:.35+Math.random()*.6,vx:-.25+Math.random()*.5,a:Math.random()*6.28,va:-.02+Math.random()*.04,ph:Math.random()*6.28,c:Math.random()<.85?'255,170,205':'94,242,255',o:.35+Math.random()*.45});
+  function size(){dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);const n=Math.round(Math.min(34,W*H/42000));while(P.length<n)P.push(mkP(false));P.length=n}
+  function petal(p){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.scale(1,.55+.45*Math.sin(p.ph));ctx.fillStyle=`rgba(${p.c},${p.o})`;ctx.beginPath();const s=p.s;
+    ctx.moveTo(0,-s);ctx.bezierCurveTo(s*.9,-s*.8,s*.9,s*.6,0,s);ctx.bezierCurveTo(-s*.9,s*.6,-s*.9,-s*.8,0,-s);ctx.fill();
+    ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.moveTo(-s*.18,-s);ctx.lineTo(0,-s*.72);ctx.lineTo(s*.18,-s);ctx.fill();ctx.restore()}
+  let t=0;function tick(){t+=.01;ctx.clearRect(0,0,W,H);for(const p of P){p.y+=p.vy;p.x+=p.vx+Math.sin(t*2+p.ph)*.35;p.a+=p.va;p.ph+=.03;if(p.y>H+20||p.x<-30||p.x>W+30)Object.assign(p,mkP(true));petal(p)}raf=requestAnimationFrame(tick)}
+  function on(){const want=document.documentElement.dataset.theme==='term'&&document.documentElement.dataset.skin==='sakura'&&!document.hidden&&localStorage.petals!=='0'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(want&&!raf){size();tick()}else if(!want&&raf){cancelAnimationFrame(raf);raf=0;ctx.clearRect(0,0,W,H)}}
+  addEventListener('resize',()=>{if(raf)size()});document.addEventListener('visibilitychange',on);return on})();
+{const _a=applySkin;applySkin=function(re){_a(re);sakuraFx()}}
+applySkin(true);
+(()=>{const host=$('.skinsw')?.parentElement;if(!host)return;const l=h('label',{className:'cbx'},h('input',{type:'checkbox',checked:localStorage.petals!=='0',onchange:e=>{localStorage.petals=e.target.checked?'1':'0';sakuraFx()}}),' Падающие лепестки сакуры (стиль «Сакура»)');host.after(l)})();
+
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
