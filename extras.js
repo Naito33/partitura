@@ -533,7 +533,7 @@ function openSettings(){$('#sCrt').checked=localStorage.crt==='1';$('#sPlate').c
 $('#sClose').onclick=()=>$('#settings').close();
 $('#sOff').onclick=()=>{cfg={};localStorage.cfg='{}';rtStop();setSync('off');$('#settings').close();toast('Синхронизация отключена')};
 $('#sSave').onclick=async()=>{const name=$('#sName').value.trim();if(name!==me()){localStorage.myName=name;updatePeople();paintMeta()}
-  localStorage.crt=$('#sCrt').checked?'1':'0';setTheme(localStorage.theme);
+  localStorage.crt=$('#sCrt')?.checked?'1':'0';setTheme(localStorage.theme);
   localStorage.imgPlate=$('#sPlate').checked?'1':'0';localStorage.kinds=$('#sKinds').checked?'1':'0';document.body.classList.toggle('nokinds',localStorage.kinds==='0');
   localStorage.ai=JSON.stringify({key:$('#sAiKey').value.trim(),model:$('#sAiModel').value});
   const lv=$('#sLive').checked;localStorage.live=lv?'1':'0';if(!lv)rtStop();
@@ -1295,6 +1295,50 @@ const sakuraFx=(()=>{const wrap=h('div',{id:'sakuraFx'}),cv=h('canvas'),kj=h('di
 {const _a=applySkin;applySkin=function(re){_a(re);sakuraFx()}}
 applySkin(true);
 (()=>{const host=$('.skinsw')?.parentElement;if(!host)return;const l=h('label',{className:'cbx'},h('input',{type:'checkbox',checked:localStorage.petals!=='0',onchange:e=>{localStorage.petals=e.target.checked?'1':'0';sakuraFx()}}),' Падающие лепестки сакуры (стиль «Сакура»)');host.after(l)})();
+
+
+/* ================= ТОКИЙСКИЙ ПЛАКАТ — единый дизайн ================= */
+const TK_COLORS=['','#f2c14e','#e8341c','#9fc3e7','#f4b6a6','#c9d6a3','#141210','#ffffff'];
+const tkBg=h('div',{id:'tkBg'});tkBg.innerHTML='<div class="grid"></div><div class="sun"></div><div class="kj">譜面</div><div class="vol"></div><div class="grain"></div>';document.body.prepend(tkBg);
+const tkMq=h('div',{id:'tkMq',title:'Статус доски'});document.body.append(tkMq);
+let tkLast='';
+function tkStatus(){const b=board();if(!b)return;const all=allTasks(b),done=all.filter(t=>t.done).length,p=all.length?Math.round(done/all.length*100):0;
+  const today=new Date(new Date().toDateString());let dl=null;
+  for(const it of live(b)){if(it.type==='deadline'&&it.date){const d=Math.round((new Date(it.date)-today)/864e5);if(d>=0&&(dl==null||d<dl))dl=d}}
+  for(const t of all)if(!t.done&&t.due){const d=Math.round((new Date(t.due)-today)/864e5);if(d>=0&&(dl==null||d<dl))dl=d}
+  const dt=new Date(),parts=[(b.title||'Без названия'),'譜面',all.length?`задачи ${done}/${all.length}`:'задач нет',`готово ${p}%`,dl!=null?`дедлайн через ${dl} дн`:'без дедлайна','締切',
+    dt.toLocaleDateString('ru-RU',{day:'2-digit',month:'long'}),'パルティトゥーラ',`досок ${Object.values(boards).filter(x=>!x.deleted).length}`];
+  const key=parts.join('|');
+  tkBg.querySelector('.sun').style.transform=`translateY(${Math.round((1-p/100)*48)}px)`;
+  tkBg.querySelector('.vol').textContent=`PARTITURA — 東京 — VOL.${String(Object.values(boards).filter(x=>!x.deleted).length).padStart(2,'0')}`;
+  if(key===tkLast)return;tkLast=key;
+  const seq=parts.map(s=>`<span>${esc(String(s))}</span><b>●</b>`).join('');
+  tkMq.innerHTML=`<div class="tr">${seq.repeat(3)}${seq.repeat(3)}</div>`}
+let tkT=0;{const _pa=paintAll;paintAll=function(){_pa();clearTimeout(tkT);tkT=setTimeout(tkStatus,250)}}
+/* номера карточек 01 / 02 … */
+let tkNum={rev:-1,id:null,m:new Map()};
+function tkN(it){const b=board();if(!b)return'';if(tkNum.id!==b.id||tkNum.rev!==b.rev){tkNum={id:b.id,rev:b.rev,m:new Map()};let i=0;for(const x of live(b))if(!x.type.startsWith('_'))tkNum.m.set(x.id,++i)}
+  const n=tkNum.m.get(it.id);return n?String(n).padStart(2,'0'):'—'}
+{const _kl=kindLabel;kindLabel=function(it,T){const k=_kl(it,T);k.dataset.n=tkN(it);return k}}
+/* тема: дневной / ночной плакат */
+applySkin=function(){};
+setTheme=function(t){if(t!=='ink')t='poster';const r=document.documentElement;r.dataset.theme=t;r.classList.add('tk');delete r.dataset.skin;localStorage.theme=t;
+  r.classList.toggle('nosun',localStorage.sun==='0');COLORS.splice(0,COLORS.length,...TK_COLORS);
+  const tb=$('#themeBtn');tb.innerHTML=ic(t==='poster'?'moon':'sun');tb.title=t==='poster'?'Ночной плакат':'Дневной плакат';
+  document.querySelector('meta[name=theme-color]').content=t==='poster'?'#ece5d8':'#131211';document.body.classList.remove('crt');
+  if(typeof sakuraFx==='function')sakuraFx();if(board()){renderBoard();drawLinks();scheduleMinimap()}tkLast='';tkStatus()};
+$('#themeBtn').onclick=()=>{const t=localStorage.theme==='poster'?'ink':'poster';setTheme(t);toast(t==='poster'?'Дневной плакат':'Ночной плакат')};
+if(localStorage.themeV!=='3'){localStorage.themeV='3';localStorage.theme='poster'}
+/* настройки: убираем скины, добавляем фон */
+(()=>{for(const el of[$('.skinsw')?.parentElement,$('.hudsw')?.parentElement])el?.remove();{const l=$('#sCrt')?.closest('label');if(l)l.hidden=true}
+  for(const l of document.querySelectorAll('#settings label'))if(/лепестки/i.test(l.textContent))l.remove();
+  const host=$('#sPlate')?.closest('label');if(!host)return;
+  const l=h('label',{className:'cbx'},h('input',{type:'checkbox',checked:localStorage.sun!=='0',onchange:e=>{localStorage.sun=e.target.checked?'1':'0';document.documentElement.classList.toggle('nosun',!e.target.checked)}}),' Красное солнце и 譜面 на фоне (солнце поднимается вместе с прогрессом доски)');
+  host.before(l)})();
+delete CMDS.skin;CMDS.theme='theme poster|ink — дневной или ночной плакат';
+{const _run=cliRun;cliRun=function(line){const[c,a]=line.trim().split(/\s+/);const lc=c?.toLowerCase();
+  if(lc==='theme'||lc==='skin'){cliPrint(cliPs()+' '+line.trim(),'m');const t=a==='ink'||a==='night'||a==='dark'?'ink':'poster';setTheme(t);cliPrint('тема: '+(t==='ink'?'ночной плакат':'дневной плакат'),'a');return}
+  return _run(line)}}
 
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');

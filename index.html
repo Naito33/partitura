@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#040804">
+<meta name="theme-color" content="#ece5d8">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&family=Onest:wght@400;500;600&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>Partitura</title>
@@ -491,6 +491,103 @@ html #boot pre,html #boot .sub,html #boot .log{position:relative}
 #sakuraFx .kj{position:absolute;right:3vw;bottom:9vh;font:400 min(34vw,380px)/1 "Dela Gothic One","Yu Gothic",sans-serif;color:transparent;-webkit-text-stroke:1.5px rgba(255,126,182,.12);writing-mode:vertical-rl;letter-spacing:-.05em;user-select:none}
 #sakuraFx .vt{position:absolute;left:14px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font:11px/1 "JetBrains Mono",monospace;letter-spacing:.5em;color:rgba(94,242,255,.35)}
 @media (max-width:800px){#sakuraFx .vt{display:none}}
+
+/* ===== ТОКИЙСКИЙ ПЛАКАТ ===== */
+[data-theme=poster]{--bg:#ece5d8;--card:#f6f1e6;--card2:#e3dbcc;--glass:#f3eee3;--tx:#141210;--mut:#6f685d;--acc:#e8341c;--acc2:#141210;--ok:#2d7a4b;--warn:#c27c0e;--bad:#e8341c;
+  --ink:#141210;--paper:#ece5d8;--line:rgba(20,18,16,.1);--line2:rgba(20,18,16,.32);--dot:rgba(20,18,16,.16);--sh:none;--sh2:6px 6px 0 rgba(20,18,16,.92);color-scheme:light}
+[data-theme=ink]{--bg:#131211;--card:#1c1b19;--card2:#252321;--glass:#1a1917;--tx:#ece5d8;--mut:#958c7e;--acc:#ff4a2e;--acc2:#ece5d8;--ok:#5fbf86;--warn:#e9a23b;--bad:#ff4a2e;
+  --ink:#ece5d8;--paper:#131211;--line:rgba(236,229,216,.09);--line2:rgba(236,229,216,.3);--dot:rgba(236,229,216,.12);--sh:none;--sh2:6px 6px 0 rgba(0,0,0,.85);color-scheme:dark}
+.tk{--fd:"Dela Gothic One","Arial Black",sans-serif;--mono:"JetBrains Mono",Consolas,monospace;--fb:"Onest","Segoe UI",system-ui,sans-serif;--r:0px}
+.tk body{font-family:var(--fb);font-size:14.5px}
+/* бумага, сетка, солнце */
+#tkBg{position:fixed;inset:0;z-index:0;pointer-events:none;display:none}
+.tk #tkBg{display:block}
+#tkBg .sun{position:absolute;right:clamp(30px,7vw,120px);top:calc(86px + var(--sa));width:clamp(150px,26vmin,300px);aspect-ratio:1;border-radius:50%;background:var(--acc);opacity:.92;transition:transform 1.2s cubic-bezier(.2,.9,.25,1)}
+#tkBg .kj{position:absolute;right:clamp(8px,2vw,30px);top:calc(80px + var(--sa));writing-mode:vertical-rl;font:400 clamp(30px,5vmin,52px)/1 var(--fd);color:var(--ink);letter-spacing:.04em}
+#tkBg .vol{position:absolute;left:18px;bottom:calc(46px + var(--sb));writing-mode:vertical-rl;transform:rotate(180deg);font:10.5px/1 var(--mono);letter-spacing:.3em;color:var(--mut)}
+#tkBg .grid{position:absolute;inset:0;background:linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/25% 100%}
+#tkBg .grain{position:absolute;inset:0;opacity:.32;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E")}
+[data-theme=ink] #tkBg .grain{mix-blend-mode:screen;opacity:.06}
+[data-theme=ink] #tkBg .sun{opacity:.85}
+.tk.nosun #tkBg :is(.sun,.kj){display:none}
+.tk #vp{background-color:transparent}
+/* бегущая строка */
+#tkMq{position:fixed;left:0;right:0;bottom:0;height:calc(28px + var(--sb));padding-bottom:var(--sb);background:var(--ink);color:var(--paper);z-index:21;overflow:hidden;display:none;align-items:center;font:11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:default}
+.tk #tkMq{display:flex}
+#tkMq .tr{display:flex;white-space:nowrap;animation:tkmq 40s linear infinite;will-change:transform}
+#tkMq .tr span{padding-right:0}
+#tkMq b{color:var(--acc);font-weight:400;margin:0 .9em}
+#tkMq:hover .tr{animation-play-state:paused}
+@keyframes tkmq{to{transform:translateX(-50%)}}
+.tk #dock{bottom:calc(40px + var(--sb))}
+.tk #minimap{bottom:calc(92px + var(--sb))}
+.tk #zoom{bottom:calc(40px + var(--sb))!important}
+/* панели */
+.tk .glass{background:var(--glass);border:1.5px solid var(--ink);border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.tk :is(.win,dialog,.pop,#cli,#ctx){border:2px solid var(--ink)!important;border-radius:0!important;box-shadow:var(--sh2)!important;background:var(--glass)}
+.tk #top{border-width:0 0 1.5px;left:0;right:0;top:0;height:calc(54px + var(--sa));padding-top:var(--sa)}
+.tk #brand{font:400 19px/1 var(--fd);letter-spacing:.02em;color:var(--ink);display:flex;align-items:center;gap:8px;text-transform:uppercase}
+.tk #brand svg{display:none}
+.tk #brand:before{content:'';width:16px;height:16px;border-radius:50%;background:var(--acc);flex:none}
+.tk #brand .cur{display:none}
+.tk #brand .jp{font:10.5px var(--mono);color:var(--mut);letter-spacing:.14em}
+.tk :is(#boardTitle,#crumbs){font-family:var(--fd);font-weight:400;letter-spacing:.01em}
+.tk #hudclock{font:11px var(--mono);letter-spacing:.12em;color:var(--mut)}
+.tk .win-h{background:var(--ink);margin:-2px -2px 10px;padding:10px 10px 9px 14px;border:0}
+.tk .win-h b{color:var(--paper)!important;font:400 15px/1.1 var(--fd);letter-spacing:.03em;text-transform:uppercase}
+.tk .win-h b:before{content:'';display:inline-block;width:9px;height:9px;background:var(--acc);margin-right:9px;vertical-align:1px}
+.tk .win-h .cb{color:var(--paper)!important}
+.tk dialog h3{font:400 24px/1.05 var(--fd);text-transform:uppercase;letter-spacing:-.01em}
+.tk :is(.phd,.sec,dialog h4){font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+/* кнопки */
+.tk :is(.btn,.chip,.tool,.ib,.cb,.mi,.pop>button,.tile,.bi,input,select,textarea,.kt,.kc,.sum,.ctx2,.lk,.imw,.fbtn,.agsw,#zoom button,.badge,.lnk-b,.prio-b){border-radius:0!important}
+.tk .btn{border:1.5px solid var(--ink);font-weight:500}
+.tk .btn.pri{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tk .btn.pri:hover{background:var(--acc);border-color:var(--acc)}
+.tk .tool.on{background:var(--acc);color:#fff}
+.tk .tool:hover:not(.on){background:var(--card2)}
+.tk :is(.chip.on,.tabs button.on){background:var(--ink);color:var(--paper)}
+.tk :is(input,select,textarea){border:1.5px solid var(--line2);background:var(--card)}
+.tk :is(input,select,textarea):focus{border-color:var(--ink);outline:none}
+.tk :is(.pop>button,.mi):hover{background:var(--ink);color:var(--paper)}
+.tk :is(.pop>button,.mi):hover :is(i,small,svg){color:inherit}
+/* карточки */
+.tk .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape){border:1.5px solid var(--ink);border-radius:0;box-shadow:none}
+.tk .card.tint:not(.t-sticky):not(.bare){background:color-mix(in srgb,var(--hue) 12%,var(--card))}
+.tk .card.sel:not(.bare){box-shadow:5px 5px 0 var(--acc)!important}
+.tk .kind{font:10.5px/1 var(--mono);letter-spacing:.12em;color:var(--acc);opacity:1;font-weight:400}
+.tk .kind svg{display:none}
+.tk .kind:before{content:attr(data-n) ' /';color:var(--mut)}
+.tk :is(.t-sticky,.t-sticky.tint){background:var(--hue,#f2c14e)!important;border:0!important;border-radius:0!important;color:#141210;box-shadow:none}
+.tk .t-sticky .txt{font:500 16px/1.35 var(--fb);color:#141210}
+.tk .t-sticky .kind{color:#141210;opacity:.6}
+.tk .t-sticky .kind:before{color:#141210}
+.tk .t-sticky[style*="#141210"] :is(.txt,.kind,.kind:before),.tk .t-sticky[style*="#e8341c"] :is(.txt,.kind,.kind:before){color:#f6f1e6!important}
+.tk .t-heading .txt{font:400 54px/.95 var(--fd);letter-spacing:-.02em;text-transform:uppercase;color:var(--tx)}
+.tk .t-frame,.tk .t-frame.tint{border:2px solid var(--ink)!important;border-radius:0!important;background:transparent}
+.tk .t-frame .ttl{font:400 22px/1 var(--fd);text-transform:uppercase;background:var(--ink);color:var(--paper);padding:6px 10px;display:inline-block}
+.tk :is(.t-progress .big,.dl-big,.tm){font:400 58px/.9 var(--fd);color:var(--acc);letter-spacing:-.03em}
+.tk .sum b{font-family:var(--fd);font-weight:400}
+.tk .bar{height:10px;border-radius:0;background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.tk .fill{border-radius:0;background:var(--ink)}
+.tk .t-progress .fill,.tk .bar.big .fill{background:var(--acc)}
+.tk .chk{border-radius:0!important;border:1.5px solid var(--ink)!important}
+.tk .chk.on,.tk .done .chk,.tk input[type=checkbox]:checked{background:var(--acc)!important;border-color:var(--acc)!important;accent-color:var(--acc)}
+.tk #selbox{border:1.5px solid var(--acc)!important;background:none!important;animation:none!important}
+.tk .hdl{background:var(--paper);border:1.5px solid var(--ink);border-radius:0}
+.tk #marquee{border:1.5px dashed var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);border-radius:0}
+.tk #toast{border:2px solid var(--ink);border-radius:0;background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--acc)}
+.tk #emptyHint{font-family:var(--fd)}
+.tk .card.enter{animation:tkIn .32s cubic-bezier(.2,.9,.25,1.1)}
+@keyframes tkIn{from{transform:translate(-6px,-6px);box-shadow:6px 6px 0 var(--acc)}}
+.tk .win{animation:tkWin .26s cubic-bezier(.2,.9,.25,1)}
+@keyframes tkWin{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.tk #minimap{border-radius:0!important;border:1.5px solid var(--ink)}
+.tk #minimap canvas{border-radius:0!important}
+.tk .tool:is(.magic,.ai){background:var(--ink)!important;color:var(--paper)!important;box-shadow:none!important}
+.tk .tool:is(.magic,.ai):hover{background:var(--acc)!important}
+@media (prefers-reduced-motion:reduce){#tkMq .tr{animation:none}.tk :is(.win,.card.enter){animation:none}}
+@media (max-width:700px){#tkBg .kj,#tkBg .vol{display:none}#tkBg .sun{width:120px;top:calc(70px + var(--sa))}.tk .t-heading .txt{font-size:40px}}
 
 .skinsw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
 .skinsw button{text-align:left;padding:10px;border:1px solid var(--line2);display:flex;flex-direction:column;gap:6px;font-size:12.5px}
