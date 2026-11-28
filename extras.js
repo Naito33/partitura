@@ -1384,7 +1384,7 @@ CMDS.boot='boot — показать заставку загрузки';
 
 
 /* ================= эффект стекла: мягкое / матовое / жидкое ================= */
-const GLASS={street:{l:'Стрит',d:'Неон, граффити, картинки светятся по краям'},soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
+const GLASS={simple:{l:'Простое',d:'Обычная доска с матовым стеклом'},street:{l:'Стрит',d:'Неон, граффити, картинки светятся по краям'},soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
 document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lqRefract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.006 0.01" numOctaves="2" seed="7" result="t"/><feGaussianBlur in="t" stdDeviation="3" result="tb"/><feDisplacementMap in="SourceGraphic" in2="tb" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter></svg>');
 function setGlass(k,quiet){if(!GLASS[k])k='soft';localStorage.glass=k;document.documentElement.dataset.glass=k;
   document.querySelectorAll('.gsel button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));if(!quiet)toast('Стекло: '+GLASS[k].l)}
@@ -1524,6 +1524,9 @@ stTagText();setTimeout(stSched,300);
   o.innerHTML='<svg viewBox="0 0 1000 1000" preserveAspectRatio="none"><ellipse cx="560" cy="430" rx="470" ry="150" transform="rotate(-14 560 430)"/><ellipse cx="520" cy="470" rx="400" ry="110" transform="rotate(-14 520 470)"/><ellipse cx="300" cy="860" rx="520" ry="210" transform="rotate(8 300 860)"/><circle class="d" cx="140" cy="508" r="5"/><circle class="d" cx="930" cy="312" r="3.5"/><path class="sp" d="M820 640l4 14 14 4-14 4-4 14-4-14-14-4 14-4z"/><path class="sp" d="M180 220l3 10 10 3-10 3-3 10-3-10-10-3 10-3z"/></svg>';
   bg.append(o);bg.append(h('div',{className:'stmeta l'},'PARTITURA',h('br'),'SYS_01 — ',String(new Date().getFullYear())));
   bg.append(h('div',{className:'stmeta r'},'IDEAS · DESIGN · PROGRESS'))})();
+
+/* ================= простое матовое — по умолчанию ================= */
+if(localStorage.glassV!=='simple1'){localStorage.glassV='simple1';setGlass('simple',true)}
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;

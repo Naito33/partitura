@@ -1126,6 +1126,58 @@ dialog .row .ibx{width:42px;height:42px;border-radius:14px}
 .lq[data-glass=street] .t-image .bd:after{content:'';position:absolute;inset:-6px;pointer-events:none;opacity:.85;
   --k:linear-gradient(var(--acc),var(--acc));
   background:var(--k) 0 0/14px 1.5px,var(--k) 0 0/1.5px 14px,var(--k) 100% 0/14px 1.5px,var(--k) 100% 0/1.5px 14px,var(--k) 0 100%/14px 1.5px,var(--k) 0 100%/1.5px 14px,var(--k) 100% 100%/14px 1.5px,var(--k) 100% 100%/1.5px 14px;background-repeat:no-repeat}
+/* ===== ПРОСТОЕ: обычная доска с матовым стеклом ===== */
+[data-theme=liquid][data-glass=simple]{--bg:#111318;--tx:#eceef3;--mut:#9096a6;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.1);--dot:rgba(255,255,255,.06);
+  --fd:"Onest","Segoe UI",sans-serif;--fb:"Onest","Segoe UI",system-ui,sans-serif;--glass:rgba(28,31,38,.62);--grad:var(--acc)}
+.lq[data-glass=simple] body{font-weight:400}
+.lq[data-glass=simple] #lqBg{background:#111318}
+.lq[data-glass=simple] #lqBg i{animation:none!important;opacity:.16;filter:blur(30px)}
+.lq[data-glass=simple] #lqBg i:nth-child(3),.lq[data-glass=simple] #lqBg i:nth-child(4){opacity:.08}
+.lq[data-glass=simple] #lqBg:before{background:none}
+.lq[data-glass=simple] #lqBg:after{display:none}
+/* панели и окна */
+.lq[data-glass=simple] :is(.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast){background:rgba(28,31,38,.62)!important;-webkit-backdrop-filter:blur(24px) saturate(140%);backdrop-filter:blur(24px) saturate(140%);
+  border:1px solid rgba(255,255,255,.08)!important;box-shadow:0 12px 32px -12px rgba(0,0,0,.6)!important}
+.lq[data-glass=simple] :is(.glass,#top,#dock,#zoom){border-radius:14px!important}
+.lq[data-glass=simple] :is(.win,dialog,#cli){border-radius:16px!important}
+.lq[data-glass=simple] :is(.pop,#ctx,#toast,#minimap){border-radius:12px!important}
+.lq[data-glass=simple] :is(.btn,.chip,.badge,.lnk-b,.prio-b){border-radius:8px!important}
+.lq[data-glass=simple] :is(.tool,.cb,.mi,.pop>button,.tile,.bi,input,select,textarea,.kt,.kc,.sum,.imw,#zoom button){border-radius:8px!important}
+.lq[data-glass=simple] .ib{border-radius:10px!important}
+.lq[data-glass=simple] .ibx{border-radius:10px;box-shadow:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.lq[data-glass=simple] .ibx.pri{background:var(--acc);color:#0d0f14;box-shadow:none}
+.lq[data-glass=simple] :is(.win-h b,dialog h3,.t-frame .ttl){font:600 15px/1.2 var(--fb);letter-spacing:0;background:none;color:var(--tx);-webkit-text-fill-color:currentColor}
+.lq[data-glass=simple] dialog h3{font-size:20px}
+.lq[data-glass=simple] :is(.phd,.sec,dialog h4){font:600 12px var(--fb);letter-spacing:0;text-transform:none;color:var(--mut)}
+.lq[data-glass=simple] .btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);box-shadow:none}
+.lq[data-glass=simple] :is(.btn.pri,.tool.on,.chip.on,.tabs button.on){background:var(--acc)!important;color:#0d0f14!important;box-shadow:none!important}
+.lq[data-glass=simple] .tool:is(.magic,.ai){box-shadow:none}
+.lq[data-glass=simple] .tool:is(.magic,.ai) svg{stroke:currentColor}
+/* бренд и название — обычный текст */
+.lq[data-glass=simple] #brand .asc{display:none}
+.lq[data-glass=simple] #brand>span{display:inline;font:600 15px var(--fb)}
+.lq[data-glass=simple] #brand svg{display:inline}
+.lq[data-glass=simple] :is(#boardTitle,#crumbs){font:600 15px var(--fb);letter-spacing:0;text-shadow:none}
+/* карточки */
+.lq[data-glass=simple] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape):not(.t-sticky){
+  background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:12px!important;
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 6px 20px -10px rgba(0,0,0,.6)!important}
+.lq[data-glass=simple] .card.tint:not(.t-sticky):not(.bare):not(.t-frame){background:color-mix(in srgb,var(--hue) 14%,rgba(255,255,255,.05))!important}
+.lq[data-glass=simple] .card.sel:not(.bare){box-shadow:0 0 0 2px var(--acc),0 6px 20px -10px rgba(0,0,0,.6)!important}
+.lq[data-glass=simple] .kind{font:500 11px/1 var(--fb);letter-spacing:0;text-transform:none;color:var(--mut)}
+.lq[data-glass=simple] :is(.t-sticky,.t-sticky.tint){background:var(--hue)!important;border:0!important;border-radius:10px!important;box-shadow:0 6px 18px -10px rgba(0,0,0,.6)!important}
+.lq[data-glass=simple] .t-sticky .txt{font:500 15px/1.4 var(--fb);color:#14161b}
+.lq[data-glass=simple] .t-heading .txt{font:700 30px/1.15 var(--fb)!important;letter-spacing:-.02em;text-transform:none;background:none;color:var(--tx);-webkit-text-fill-color:currentColor;filter:none}
+.lq[data-glass=simple] :is(.t-frame,.t-frame.tint){border:1px dashed rgba(255,255,255,.14)!important;border-radius:16px!important;background:rgba(255,255,255,.02)!important;box-shadow:none!important}
+.lq[data-glass=simple] :is(.t-progress .big,.dl-big,.tm){font:600 44px/1 var(--fb);letter-spacing:-.03em;background:none;color:var(--tx);-webkit-text-fill-color:currentColor}
+.lq[data-glass=simple] .bar{height:6px;background:rgba(255,255,255,.08);box-shadow:none}
+.lq[data-glass=simple] .fill{background:var(--acc)!important;box-shadow:none}
+.lq[data-glass=simple] :is(.kc){background:rgba(255,255,255,.035);border:0}
+.lq[data-glass=simple] .kt{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);box-shadow:none}
+.lq[data-glass=simple] #bload .p{background:none;color:var(--acc);-webkit-text-fill-color:currentColor}
+.gsel [data-k=simple] .pv{background:#111318}
+.gsel [data-k=simple] .pv:before{opacity:.35;filter:blur(10px)}
+.gsel [data-k=simple] .pv:after{background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:6px}
 </style>
 </head>
 <body data-tool="select">
