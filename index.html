@@ -689,6 +689,69 @@ html #boot pre,html #boot .sub,html #boot .log{position:relative}
 .lqmood button.on{outline:2px solid var(--acc);outline-offset:1px}
 .lqmood i{display:block;height:34px;border-radius:10px}
 
+/* ===== эффекты стекла: frost (матовое) и liquid (жидкое) ===== */
+.lq{--noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");--gnoise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* фон: чёткие градиентные фигуры с зерном, как у Kuro */
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg{background:#05051a}
+[data-theme=liquid][data-glass]:not([data-glass=soft]){--bg:#05051a}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg i{opacity:1;filter:none}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg i:nth-child(1){left:-12vmax;top:-22vmax;width:62vmax;height:62vmax;border-radius:47% 53% 58% 42%/52% 44% 56% 48%;background:linear-gradient(205deg,var(--b3) 0%,var(--b1) 48%,var(--b2) 100%);animation:lqR1 70s ease-in-out infinite alternate}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg i:nth-child(2){right:-14vmax;bottom:-24vmax;left:auto;top:auto;width:56vmax;height:52vmax;border-radius:58% 42% 36% 64%/45% 60% 40% 55%;background:linear-gradient(160deg,var(--b1) 0%,var(--b3) 45%,#fff 130%);animation:lqR2 80s ease-in-out infinite alternate}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg i:nth-child(3){left:-8vmax;bottom:-26vmax;top:auto;width:40vmax;height:40vmax;border-radius:50%;background:linear-gradient(30deg,var(--b4) 0%,var(--b2) 55%,#fff 120%);animation:lqR1 90s ease-in-out infinite alternate-reverse}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg i:nth-child(4){right:18vmax;top:8vmax;bottom:auto;width:16vmax;height:16vmax;border-radius:50%;background:linear-gradient(135deg,var(--b2),var(--b4));animation:lqR2 60s ease-in-out infinite alternate-reverse}
+@keyframes lqR1{to{transform:translate(4vmax,3vmax) rotate(28deg)}}
+@keyframes lqR2{to{transform:translate(-4vmax,-3vmax) rotate(-24deg)}}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg:before{background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(3,3,15,.55) 100%)}
+.lq:is([data-glass=frost],[data-glass=liquid]) #lqBg:after{background-image:var(--noise);mix-blend-mode:soft-light;opacity:.55}
+/* ---- МАТОВОЕ ---- */
+.lq[data-glass=frost]{--glass:rgba(255,255,255,.07)}
+.lq[data-glass=frost] :is(.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast),
+.lq[data-glass=frost] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-shape):not(.t-sticky){
+  background:var(--gnoise),linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.035) 60%,rgba(255,255,255,.07))!important;background-size:200px 200px,auto!important;
+  -webkit-backdrop-filter:blur(34px) saturate(140%);backdrop-filter:blur(34px) saturate(140%);
+  border:1px solid rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 24px 60px -24px rgba(0,0,0,.75)!important}
+.lq[data-glass=frost] .card.tint:not(.t-sticky):not(.bare):not(.t-frame){background:var(--gnoise),linear-gradient(135deg,color-mix(in srgb,var(--hue) 30%,rgba(255,255,255,.08)),rgba(255,255,255,.035))!important;background-size:200px 200px,auto!important}
+.lq[data-glass=frost] :is(.t-sticky,.t-sticky.tint){background:var(--gnoise),linear-gradient(135deg,color-mix(in srgb,var(--hue) 55%,transparent),color-mix(in srgb,var(--hue) 18%,transparent))!important;background-size:200px 200px,auto!important;
+  -webkit-backdrop-filter:blur(26px) saturate(160%);backdrop-filter:blur(26px) saturate(160%);border:1px solid color-mix(in srgb,var(--hue) 50%,rgba(255,255,255,.3))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 18px 40px -18px rgba(0,0,0,.7)!important}
+.lq[data-glass=frost] .t-sticky .txt{color:#fff;font-weight:600}
+.lq[data-glass=frost] .t-sticky .kind{color:rgba(255,255,255,.65)}
+.lq[data-glass=frost] .card.sel:not(.bare){box-shadow:0 0 0 1.5px rgba(255,255,255,.7),0 0 40px -8px var(--acc),0 24px 60px -24px rgba(0,0,0,.75)!important}
+/* ---- ЖИДКОЕ ---- */
+.lq[data-glass=liquid]{--glass:rgba(255,255,255,.08);
+  --lglass:inset 0 1px 1px rgba(255,255,255,.75),inset 1px 0 1px rgba(255,255,255,.35),inset 0 -1px 1px rgba(255,255,255,.18),inset 10px 12px 22px -14px rgba(255,255,255,.45),inset -12px -16px 26px -18px rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.08)}
+.lq[data-glass=liquid] :is(.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast),
+.lq[data-glass=liquid] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-shape):not(.t-sticky){
+  background:linear-gradient(150deg,rgba(255,255,255,.2),rgba(255,255,255,.05) 45%,rgba(255,255,255,.1))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.08);backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  backdrop-filter:url(#lqRefract) blur(10px) saturate(190%) brightness(1.08);
+  border:1px solid rgba(255,255,255,.22)!important;box-shadow:var(--lglass),0 26px 60px -22px rgba(0,0,0,.7),0 8px 18px -10px rgba(0,0,0,.5)!important}
+.lq[data-glass=liquid] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-shape):not(.t-frame){border-radius:24px!important}
+.lq[data-glass=liquid] .card.tint:not(.t-sticky):not(.bare):not(.t-frame){background:linear-gradient(150deg,color-mix(in srgb,var(--hue) 40%,rgba(255,255,255,.2)),rgba(255,255,255,.05) 55%,color-mix(in srgb,var(--hue) 15%,transparent))!important}
+.lq[data-glass=liquid] :is(.t-sticky,.t-sticky.tint){border-radius:28px!important;background:linear-gradient(175deg,color-mix(in srgb,var(--hue) 75%,#fff) 0%,var(--hue) 50%,color-mix(in srgb,var(--hue) 45%,#fff) 100%)!important;border:0!important;
+  box-shadow:inset 0 2px 2px rgba(255,255,255,.85),inset 0 -3px 6px rgba(255,255,255,.35),inset 14px 16px 26px -18px rgba(255,255,255,.9),inset -10px -14px 22px -14px color-mix(in srgb,var(--hue) 60%,#000),0 22px 44px -16px color-mix(in srgb,var(--hue) 85%,transparent),0 6px 14px -6px rgba(0,0,0,.45)!important}
+.lq[data-glass=liquid] .t-sticky .txt{color:#10101c;font-weight:700}
+.lq[data-glass=liquid] .card.sel:not(.bare){box-shadow:var(--lglass),0 0 0 2px rgba(255,255,255,.75),0 0 44px -8px var(--acc),0 26px 60px -22px rgba(0,0,0,.7)!important}
+.lq[data-glass=liquid] :is(.btn.pri,.tool.on,.chip.on,.tabs button.on){box-shadow:inset 0 1px 1px rgba(255,255,255,.8),inset 6px 8px 14px -10px rgba(255,255,255,.9),0 10px 24px -8px var(--acc)!important}
+.lq[data-glass=liquid] :is(.win,dialog,#cli){border-radius:30px!important}
+.lq[data-glass=liquid] .glass{border-radius:26px}
+.lq[data-glass=liquid] .bar{height:10px;background:rgba(255,255,255,.12);box-shadow:inset 0 1px 3px rgba(0,0,0,.45),inset 0 -1px 0 rgba(255,255,255,.15)}
+.lq[data-glass=liquid] .fill{box-shadow:inset 0 1px 1px rgba(255,255,255,.7),0 0 14px -2px var(--acc)}
+.lq[data-glass=frost] :is(.glass,.win,dialog,.pop,#cli,#ctx,#toast){background:var(--gnoise),linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(14,14,34,.4)!important;background-size:200px 200px,auto,auto!important}
+.lq[data-glass=liquid] :is(.glass,.win,dialog,.pop,#cli,#ctx,#toast){background:linear-gradient(150deg,rgba(255,255,255,.18),rgba(255,255,255,.04) 45%,rgba(255,255,255,.08)),rgba(14,14,34,.34)!important}
+.lq.calm #lqBg i{animation:none!important}
+@media (prefers-reduced-motion:reduce){.lq #lqBg i{animation:none!important}}
+.gsel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 10px}
+.gsel button{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line2);background:none;color:var(--tx);font-size:12px;border-radius:14px;cursor:pointer;text-align:left}
+.gsel button.on{outline:2px solid var(--acc);outline-offset:1px}
+.gsel small{color:var(--mut);font-size:10.5px;line-height:1.3}
+.gsel .pv{height:44px;border-radius:10px;position:relative;overflow:hidden;background:#05051a}
+.gsel .pv:before{content:'';position:absolute;left:-6px;top:-10px;width:40px;height:40px;border-radius:50%;background:linear-gradient(200deg,#ff4fd8,#7b5cff,#00c2ff)}
+.gsel .pv:after{content:'';position:absolute;left:16px;top:10px;right:10px;bottom:8px;border-radius:8px}
+.gsel [data-k=soft] .pv:before{filter:blur(10px)}
+.gsel [data-k=soft] .pv:after{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}
+.gsel [data-k=frost] .pv:after{background:var(--noise),rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2)}
+.gsel [data-k=liquid] .pv:after{background:linear-gradient(150deg,rgba(255,255,255,.3),rgba(255,255,255,.06));-webkit-backdrop-filter:blur(3px) saturate(180%);backdrop-filter:blur(3px) saturate(180%);border-radius:12px;box-shadow:inset 0 1px 1px rgba(255,255,255,.8),inset 6px 6px 10px -6px rgba(255,255,255,.6),0 6px 12px -4px rgba(0,0,0,.6)}
+
 .skinsw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
 .skinsw button{text-align:left;padding:10px;border:1px solid var(--line2);display:flex;flex-direction:column;gap:6px;font-size:12.5px}
 .skinsw button.on{outline:2px solid var(--acc);outline-offset:1px}

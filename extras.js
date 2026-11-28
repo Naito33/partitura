@@ -1382,6 +1382,20 @@ CMDS.theme='theme aurora|ember|toxic|ocean — настроение фона';
   return _run(line)}}
 CMDS.boot='boot — показать заставку загрузки';
 
+
+/* ================= эффект стекла: мягкое / матовое / жидкое ================= */
+const GLASS={soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
+document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lqRefract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.006 0.01" numOctaves="2" seed="7" result="t"/><feGaussianBlur in="t" stdDeviation="3" result="tb"/><feDisplacementMap in="SourceGraphic" in2="tb" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter></svg>');
+function setGlass(k,quiet){if(!GLASS[k])k='soft';localStorage.glass=k;document.documentElement.dataset.glass=k;
+  document.querySelectorAll('.gsel button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));if(!quiet)toast('Стекло: '+GLASS[k].l)}
+setGlass(localStorage.glass||'soft',true);
+(()=>{const host=$('.lqmood')?.parentElement;if(!host)return;
+  const sel=h('div',{className:'gsel'},...Object.entries(GLASS).map(([k,g])=>{const b=h('button',{type:'button',onclick:()=>setGlass(k)},h('div',{className:'pv'}),h('b',{},g.l),h('small',{},g.d));b.dataset.k=k;return b}));
+  host.before(h('div',{},h('label',{},'Эффект стекла'),sel));setGlass(localStorage.glass||'soft',true)})();
+CMDS.glass='glass soft|frost|liquid — эффект стекла';
+{const _run=cliRun;cliRun=function(line){const[c,a]=line.trim().split(/\s+/);if(c?.toLowerCase()==='glass'){cliPrint(cliPs()+' '+line.trim(),'m');
+  if(!GLASS[a]){cliPrint('glass '+Object.keys(GLASS).join('|'),'e');return}setGlass(a);cliPrint('стекло: '+GLASS[a].l,'a');return}return _run(line)}}
+
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
