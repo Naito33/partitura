@@ -1384,7 +1384,7 @@ CMDS.boot='boot — показать заставку загрузки';
 
 
 /* ================= эффект стекла: мягкое / матовое / жидкое ================= */
-const GLASS={simple:{l:'Простое',d:'Обычная доска с матовым стеклом'},street:{l:'Стрит',d:'Неон, граффити, картинки светятся по краям'},soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
+const GLASS={relief:{l:'Рельеф',d:'Точечный ландшафт, тёмные панели'},tags:{l:'Бирки',d:'Цветные пластины, крупный шрифт'},concrete:{l:'Бетон',d:'Этикетки с номерами на бетоне'},simple:{l:'Простое',d:'Обычная доска с матовым стеклом'},street:{l:'Стрит',d:'Неон, граффити, картинки светятся по краям'},soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
 document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lqRefract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.006 0.01" numOctaves="2" seed="7" result="t"/><feGaussianBlur in="t" stdDeviation="3" result="tb"/><feDisplacementMap in="SourceGraphic" in2="tb" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter></svg>');
 function setGlass(k,quiet){if(!GLASS[k])k='soft';localStorage.glass=k;document.documentElement.dataset.glass=k;
   document.querySelectorAll('.gsel button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));if(!quiet)toast('Стекло: '+GLASS[k].l)}
@@ -1527,6 +1527,37 @@ stTagText();setTimeout(stSched,300);
 
 /* ================= простое матовое — по умолчанию ================= */
 if(localStorage.glassV!=='simple1'){localStorage.glassV='simple1';setGlass('simple',true)}
+
+/* ================= v24: РЕЛЬЕФ / БИРКИ / БЕТОН ================= */
+(()=>{const sel=$('.gsel');if(!sel)return;for(const k of['concrete','tags','relief']){if(sel.querySelector(`[data-k=${k}]`))continue;const g=GLASS[k];
+  const b=h('button',{type:'button',onclick:()=>setGlass(k)},h('div',{className:'pv'}),h('b',{},g.l),h('small',{},g.d));b.dataset.k=k;sel.prepend(b)}
+  sel.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k===document.documentElement.dataset.glass))})();
+const skHash=s=>{let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return h>>>0};
+/* номер бирки и цвет пластины — стабильно от id карточки */
+function skTag(el){const id=el.dataset?.id;if(!id||el.dataset.n)return;const x=skHash(id);el.dataset.n=String(x%1000).padStart(3,'0');el.dataset.v=String((x>>>10)%4)}
+new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&n.classList.contains('card'))skTag(n)}).observe($('#cards'),{childList:true});
+document.querySelectorAll('#cards>.card').forEach(skTag);
+/* статичные фоны: точечный рельеф и бетон */
+const skH=(x,y)=>{let h=Math.imul(x,374761393)+Math.imul(y,668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296};
+const skV=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),a=skH(xi,yi),b=skH(xi+1,yi),c=skH(xi,yi+1),d=skH(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v};
+const skF=(x,y,o=5)=>{let s=0,a=.5;for(let i=0;i<o;i++){s+=a*skV(x,y);x=x*2.03+17;y=y*2.03+9;a*=.5}return s};
+const skS=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
+const skCv=h('canvas',{id:'skinBg'});$('#lqBg')?.prepend(skCv);let skKey='';
+function skRelief(){const W=innerWidth,H=innerHeight,k=W+'x'+H;if(skKey===k)return;skKey=k;const d=Math.min(2,devicePixelRatio||1);skCv.width=W*d;skCv.height=H*d;
+  const x=skCv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,W,H);const sc=1/Math.max(W,H)*4.2,st=W<700?6:7;
+  for(let j=st;j<H;j+=st)for(let i=st;i<W;i+=st){const h=skF(i*sc+2,j*sc+5,6),g=h*14,cont=Math.abs(g-Math.floor(g)-.5)>.43,r=.3+1.9*skS(.34,.7,h);
+    x.fillStyle=cont?`rgba(150,210,190,${(.1+.45*skS(.3,.7,h)).toFixed(3)})`:`rgba(52,${96+90*h|0},${88+60*h|0},${(.05+.5*skS(.32,.72,h)).toFixed(3)})`;x.beginPath();x.arc(i,j,r,0,7);x.fill()}
+  const v=x.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.75);v.addColorStop(0,'rgba(11,16,19,0)');v.addColorStop(1,'rgba(11,16,19,.5)');x.fillStyle=v;x.fillRect(0,0,W,H)}
+let skConc=0;
+function skConcrete(){if(skConc)return;skConc=1;const c=document.createElement('canvas'),S=512;c.width=c.height=S;const x=c.getContext('2d'),im=x.createImageData(S,S);
+  for(let j=0;j<S;j++)for(let i=0;i<S;i++){const t=(a,b)=>skF(a,b,5);const n=.6*t(i/S*6,j/S*6)+.4*skH(i,j)*.55+(skH(i>>1,j>>1)>.987?-.22:0)+(skH(i,j+7)>.9993?.25:0);
+    const v=24+34*n,o=(j*S+i)*4;im.data[o]=v;im.data[o+1]=v;im.data[o+2]=v*.97;im.data[o+3]=255}
+  x.putImageData(im,0,0);document.documentElement.style.setProperty('--concrete',`url(${c.toDataURL('image/png')})`)}
+function skApply(){const g=document.documentElement.dataset.glass;if(g==='relief')skRelief();else if(g==='concrete')skConcrete()}
+{const _sg=setGlass;setGlass=function(k,q){_sg(k,q);skApply()}}
+let skRT=0;addEventListener('resize',()=>{clearTimeout(skRT);skRT=setTimeout(skApply,250)});
+skApply();
+if(localStorage.glassV!=='skin24'){localStorage.glassV='skin24';setGlass('relief',true)}
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;

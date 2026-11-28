@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#06070b">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&family=Onest:wght@400;500;600&family=Rubik+Glitch&family=Rubik+Wet+Paint&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&family=Onest:wght@400;500;600&family=Rubik+Glitch&family=Rubik+Wet+Paint&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Archivo:wght@900&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>Partitura</title>
@@ -1178,6 +1178,141 @@ dialog .row .ibx{width:42px;height:42px;border-radius:14px}
 .gsel [data-k=simple] .pv{background:#111318}
 .gsel [data-k=simple] .pv:before{opacity:.35;filter:blur(10px)}
 .gsel [data-k=simple] .pv:after{background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:6px}
+/* ===== v24: РЕЛЬЕФ / БИРКИ / БЕТОН ===== */
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #lqBg i{display:none}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #lqBg:before{background:none}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #lqBg:after{display:none}
+#skinBg{position:absolute;inset:0;width:100%;height:100%;display:none}
+.lq[data-glass=relief] #skinBg{display:block}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq :is(.win-h b,dialog h3,.t-frame .ttl){background:none;-webkit-text-fill-color:currentColor;letter-spacing:0}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #brand .asc{display:none}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #brand>span{display:inline}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #brand svg{display:inline}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq :is(.t-progress .big,.dl-big,.tm,.t-heading .txt,#bload .p){background:none;-webkit-text-fill-color:currentColor;filter:none;text-shadow:none}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq .tool:is(.magic,.ai){box-shadow:none}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq .tool:is(.magic,.ai) svg{stroke:currentColor}
+
+/* ---------- РЕЛЬЕФ: точечный ландшафт, тёмные панели, оранжевый только для рисков ---------- */
+[data-theme=liquid][data-glass=relief]{--bg:#0b1013;--tx:#dfe6e4;--mut:#7b8a89;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.1);--dot:rgba(140,200,180,.08);
+  --acc:#8cc9b4;--acc2:#d9773a;--bad:#d9773a;--warn:#d9a03a;--fd:"Space Grotesk","Segoe UI",sans-serif;--fb:"Space Grotesk","Segoe UI",system-ui,sans-serif;--glass:rgba(18,25,28,.86);--grad:var(--acc)}
+.lq[data-glass=relief] #lqBg{background:#0b1013}
+.lq[data-glass=relief] :is(.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast){background:rgba(16,22,25,.9)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.07)!important;box-shadow:0 14px 34px -14px rgba(0,0,0,.8)!important;border-radius:10px!important}
+.lq[data-glass=relief] :is(.btn,.chip,.badge,.lnk-b,.tool,.cb,.mi,.pop>button,.tile,.bi,input,select,textarea,.kt,.kc,.sum,.imw,#zoom button,.ib,.ibx){border-radius:7px!important}
+.lq[data-glass=relief] .ibx{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);box-shadow:none}
+.lq[data-glass=relief] :is(.btn.pri,.ibx.pri,.tool.on,.chip.on,.tabs button.on){background:var(--acc)!important;color:#0b1013!important;box-shadow:none!important}
+.lq[data-glass=relief] .btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);box-shadow:none}
+.lq[data-glass=relief] :is(.win-h b,dialog h3,.t-frame .ttl,#boardTitle,#crumbs){font:600 14px var(--fb);color:var(--tx)}
+.lq[data-glass=relief] dialog h3{font-size:19px}
+.lq[data-glass=relief] :is(.phd,.sec,dialog h4){font:400 10px "Space Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.lq[data-glass=relief] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape){
+  background:rgba(16,22,25,.88)!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:10px!important;box-shadow:0 10px 26px -14px rgba(0,0,0,.85)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.lq[data-glass=relief] .card.tint:not(.bare):not(.t-frame){background:color-mix(in srgb,var(--hue) 12%,rgba(16,22,25,.9))!important}
+.lq[data-glass=relief] .card.t-sticky:not(.bare){border-left:3px solid color-mix(in srgb,var(--hue) 70%,#8cc9b4)!important}
+.lq[data-glass=relief] .t-sticky .txt{font:500 15px/1.45 var(--fb);color:var(--tx)}
+.lq[data-glass=relief] .card.sel:not(.bare){box-shadow:0 0 0 1.5px var(--acc),0 10px 26px -14px rgba(0,0,0,.85)!important}
+.lq[data-glass=relief] .kind{font:400 10px/1 "Space Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.lq[data-glass=relief] .t-heading .txt{font:600 30px/1.1 var(--fb)!important;letter-spacing:-.02em;text-transform:none;color:var(--tx)}
+.lq[data-glass=relief] :is(.t-frame,.t-frame.tint){border:1px solid rgba(140,200,180,.18)!important;border-radius:12px!important;background:rgba(11,16,19,.35)!important;box-shadow:none!important}
+.lq[data-glass=relief] :is(.t-progress .big,.dl-big,.tm){font:600 42px/1 var(--fb);letter-spacing:-.03em;color:var(--tx)}
+.lq[data-glass=relief] .bar{height:4px;background:rgba(255,255,255,.07);box-shadow:none}
+.lq[data-glass=relief] .fill{background:var(--acc)!important;box-shadow:none}
+.lq[data-glass=relief] .kc{background:rgba(255,255,255,.025);border:0}
+.lq[data-glass=relief] .kt{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);box-shadow:none}
+.lq[data-glass=relief] .prio-b{border-radius:4px;font:700 10px "Space Mono",monospace;text-transform:uppercase;box-shadow:none}
+.lq[data-glass=relief] #bload .p{color:var(--acc)}
+
+/* ---------- БИРКИ: плотные цветные пластины, крупный гротеск, штрихкоды ---------- */
+[data-theme=liquid][data-glass=tags]{--bg:#0b0b0b;--tx:#e7e3da;--mut:#8f8b82;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.12);--dot:rgba(255,255,255,.05);
+  --acc:#d99d5f;--acc2:#b4554b;--bad:#b4554b;--fd:"Unbounded","Segoe UI",sans-serif;--fb:"Space Grotesk","Segoe UI",system-ui,sans-serif;--glass:#161616;--grad:var(--acc)}
+.lq[data-glass=tags] #lqBg{background:#0b0b0b}
+.lq[data-glass=tags] :is(.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast){background:#161616!important;-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid #2a2a2a!important;box-shadow:0 16px 40px -16px #000!important;border-radius:16px!important}
+.lq[data-glass=tags] :is(.btn,.chip,.badge,.lnk-b,.tool,.cb,.mi,.pop>button,.tile,.bi,input,select,textarea,.kt,.kc,.sum,#zoom button,.ib,.ibx){border-radius:9px!important}
+.lq[data-glass=tags] .ibx{background:#202020;border:1px solid #2e2e2e;box-shadow:none}
+.lq[data-glass=tags] :is(.btn.pri,.ibx.pri,.tool.on,.chip.on,.tabs button.on){background:var(--acc)!important;color:#151515!important;box-shadow:none!important}
+.lq[data-glass=tags] .btn{background:#202020;border:1px solid #2e2e2e;box-shadow:none}
+.lq[data-glass=tags] :is(.win-h b,dialog h3,#boardTitle,#crumbs){font:800 14px var(--fd);text-transform:uppercase;color:var(--tx)}
+.lq[data-glass=tags] dialog h3{font-size:18px}
+.lq[data-glass=tags] :is(.phd,.sec,dialog h4){font:700 10px "Space Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.lq[data-glass=tags] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape){
+  --pl:#d99d5f;--tx:#151515;--mut:rgba(21,21,21,.62);--line:rgba(21,21,21,.2);--line2:rgba(21,21,21,.3);
+  background:var(--pl)!important;color:#151515;border:0!important;border-radius:18px!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+.lq[data-glass=tags] #cards>.card[data-v="1"]{--pl:#b4554b}
+.lq[data-glass=tags] #cards>.card[data-v="2"]{--pl:#7f9a76}
+.lq[data-glass=tags] #cards>.card[data-v="3"]{--pl:#a3a39e}
+.lq[data-glass=tags] #cards>.card.tint:not(.bare):not(.t-frame){--pl:color-mix(in oklab,var(--hue) 38%,#958b7c)}
+.lq[data-glass=tags] #cards>.card.t-image:not(.bare){--pl:#a3a39e}
+.lq[data-glass=tags] .card.sel:not(.bare){outline:2px solid #e7e3da;outline-offset:3px}
+.lq[data-glass=tags] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape) .hd{border-bottom:1.5px solid #151515;margin-bottom:6px}
+.lq[data-glass=tags] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape):after{content:'';position:absolute;right:16px;bottom:12px;width:44px;height:11px;pointer-events:none;opacity:.85;
+  background:linear-gradient(90deg,#151515 0 2px,#0000 2px 4px,#151515 4px 5px,#0000 5px 8px,#151515 8px 11px,#0000 11px 12px,#151515 12px 13px,#0000 13px 16px,#151515 16px 18px,#0000 18px 19px,#151515 19px 20px,#0000 20px 23px,#151515 23px 26px,#0000 26px 27px,#151515 27px 28px,#0000 28px 30px,#151515 30px 32px,#0000 32px 35px,#151515 35px 36px,#0000 36px 38px,#151515 38px 41px,#0000 41px 42px,#151515 42px 44px)}
+.lq[data-glass=tags] .kind{font:800 11px/1 var(--fd);letter-spacing:0;text-transform:uppercase;color:#151515}
+.lq[data-glass=tags] .kind svg{display:none}
+.lq[data-glass=tags] .card :is(input,textarea,.rt,.txt){color:#151515}
+.lq[data-glass=tags] .card :is(input,textarea,select){background:rgba(21,21,21,.08);border-color:rgba(21,21,21,.25)}
+.lq[data-glass=tags] .card :is(.cb,.chk){border-color:#151515!important}
+.lq[data-glass=tags] .t-sticky .txt{font:500 16px/1.4 var(--fb)}
+.lq[data-glass=tags] .t-heading .txt{font:800 34px/1 var(--fd)!important;letter-spacing:-.02em;text-transform:uppercase;color:#e7e3da}
+.lq[data-glass=tags] :is(.t-frame,.t-frame.tint){border:1.5px solid #2e2e2e!important;border-radius:22px!important;background:rgba(255,255,255,.015)!important;box-shadow:none!important}
+.lq[data-glass=tags] .t-frame .ttl{font:800 13px var(--fd);text-transform:uppercase;color:var(--mut)}
+.lq[data-glass=tags] :is(.t-progress .big,.dl-big,.tm){font:800 54px/.9 var(--fd);letter-spacing:-.05em;color:#151515}
+.lq[data-glass=tags] .bar{height:12px;border:1.5px solid #151515;background:none;border-radius:3px;box-shadow:none}
+.lq[data-glass=tags] .fill{background:#151515!important;box-shadow:none;border-radius:0}
+.lq[data-glass=tags] .kc{background:rgba(21,21,21,.08);border:0}
+.lq[data-glass=tags] .kt{background:rgba(255,255,255,.35);border:1.5px solid #151515;box-shadow:none}
+.lq[data-glass=tags] .imw{border-radius:10px!important;filter:grayscale(.35) contrast(1.05)}
+.lq[data-glass=tags] .prio-b{border-radius:5px;background:#151515!important;color:#e7e3da;font:700 10px "Space Mono",monospace;text-transform:uppercase;box-shadow:none}
+.lq[data-glass=tags] #bload .p{color:var(--acc)}
+
+/* ---------- БЕТОН: тёмный бетон, бирки-этикетки с огромными номерами ---------- */
+[data-theme=liquid][data-glass=concrete]{--bg:#242423;--tx:#d6d3cb;--mut:#8a8882;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.12);--dot:rgba(0,0,0,.18);
+  --acc:#e2561d;--acc2:#cfcdc6;--bad:#e2561d;--fd:"Archivo","Arial Narrow",sans-serif;--fb:"Space Grotesk","Segoe UI",system-ui,sans-serif;--glass:#1a1a19;--grad:var(--acc)}
+.lq[data-glass=concrete] #lqBg{background:#262625 var(--concrete,none) repeat;background-size:512px}
+.lq[data-glass=concrete] :is(.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast){background:#1a1a19!important;-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid #3a3936!important;box-shadow:0 14px 36px -14px #000!important;border-radius:3px!important}
+.lq[data-glass=concrete] :is(.btn,.chip,.badge,.lnk-b,.tool,.cb,.mi,.pop>button,.tile,.bi,input,select,textarea,.kt,.kc,.sum,.imw,#zoom button,.ib,.ibx){border-radius:2px!important}
+.lq[data-glass=concrete] .ibx{background:#222221;border:1px solid #3a3936;box-shadow:none}
+.lq[data-glass=concrete] :is(.btn.pri,.ibx.pri,.tool.on,.chip.on,.tabs button.on){background:var(--acc)!important;color:#141414!important;box-shadow:none!important}
+.lq[data-glass=concrete] .btn{background:#222221;border:1px solid #3a3936;box-shadow:none}
+.lq[data-glass=concrete] :is(.win-h b,dialog h3,#boardTitle,#crumbs){font:900 15px var(--fd);text-transform:uppercase;letter-spacing:-.01em;color:var(--tx)}
+.lq[data-glass=concrete] dialog h3{font-size:22px}
+.lq[data-glass=concrete] :is(.phd,.sec,dialog h4){font:400 9px "Space Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+.lq[data-glass=concrete] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape){
+  --pl:#cfcdc6;--tx:#141414;--mut:rgba(20,20,20,.6);--line:rgba(20,20,20,.18);--line2:rgba(20,20,20,.28);
+  background:var(--pl)!important;color:#141414;border:0!important;border-radius:2px!important;box-shadow:0 12px 24px -12px rgba(0,0,0,.7)!important;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:hidden}
+.lq[data-glass=concrete] #cards>.card[data-v="1"]{--pl:#e2561d}
+.lq[data-glass=concrete] #cards>.card[data-v="3"]{--pl:#1a1a19;--tx:#d6d3cb;--mut:#8a8882;--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.16);color:#d6d3cb;outline:1px solid #3a3936}
+.lq[data-glass=concrete] #cards>.card.tint:not(.bare):not(.t-frame){--pl:color-mix(in oklab,var(--hue) 30%,#bdbab2);--tx:#141414;--mut:rgba(20,20,20,.6);--line:rgba(20,20,20,.18);--line2:rgba(20,20,20,.28);color:#141414;outline:0}
+.lq[data-glass=concrete] .card.sel:not(.bare){outline:2px solid var(--acc);outline-offset:3px}
+.lq[data-glass=concrete] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape):not(.t-image):before{content:attr(data-n);position:absolute;right:8px;bottom:-6px;font:900 64px/1 var(--fd);letter-spacing:-.05em;color:currentColor;opacity:.12;pointer-events:none}
+.lq[data-glass=concrete] #cards>.card[data-v="1"]:not(.bare):before{opacity:.22}
+.lq[data-glass=concrete] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-frame):not(.t-shape) .hd{border-bottom:1px solid currentColor;padding-bottom:4px;margin-bottom:6px}
+.lq[data-glass=concrete] .kind{font:400 9px/1 "Space Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:currentColor;opacity:.85}
+.lq[data-glass=concrete] .kind svg{display:none}
+.lq[data-glass=concrete] .card :is(input,textarea,.rt,.txt){color:inherit}
+.lq[data-glass=concrete] .card :is(input,textarea,select){background:rgba(0,0,0,.06);border-color:currentColor}
+.lq[data-glass=concrete] .t-sticky .txt{font:500 15px/1.4 var(--fb)}
+.lq[data-glass=concrete] .t-heading .txt{font:900 40px/.95 var(--fd)!important;letter-spacing:-.03em;text-transform:uppercase;color:#d6d3cb}
+.lq[data-glass=concrete] :is(.t-frame,.t-frame.tint){border:1px dashed #55534e!important;border-radius:0!important;background:rgba(0,0,0,.12)!important;box-shadow:none!important}
+.lq[data-glass=concrete] .t-frame .ttl{font:400 10px "Space Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+.lq[data-glass=concrete] :is(.t-progress .big,.dl-big,.tm){font:900 62px/.85 var(--fd);letter-spacing:-.05em;color:currentColor}
+.lq[data-glass=concrete] .bar{height:10px;background:repeating-linear-gradient(90deg,currentColor 0 1px,#0000 1px 6px);opacity:.9;border-radius:0;box-shadow:none}
+.lq[data-glass=concrete] .fill{background:currentColor!important;border-radius:0;box-shadow:none}
+.lq[data-glass=concrete] .kc{background:rgba(0,0,0,.08);border:0}
+.lq[data-glass=concrete] .kt{background:rgba(255,255,255,.25);border:1px solid currentColor;box-shadow:none}
+.lq[data-glass=concrete] .imw{filter:grayscale(.5) contrast(1.1)}
+.lq[data-glass=concrete] .prio-b{border-radius:0;background:#141414!important;color:#e2561d;font:700 9px "Space Mono",monospace;text-transform:uppercase;box-shadow:none}
+.lq[data-glass=concrete] #bload .p{color:var(--acc)}
+:is([data-glass=relief],[data-glass=tags],[data-glass=concrete]).lq #cards>.card.t-heading{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* превью в настройках */
+.gsel [data-k=relief] .pv{background:#0b1013 radial-gradient(circle,#4f9a85 1px,#0000 1.5px) 0 0/6px 6px}
+.gsel [data-k=relief] .pv:before{display:none}
+.gsel [data-k=relief] .pv:after{background:rgba(16,22,25,.9);border:1px solid rgba(255,255,255,.1);border-radius:5px}
+.gsel [data-k=tags] .pv{background:#0b0b0b}
+.gsel [data-k=tags] .pv:before{left:6px;top:6px;width:22px;height:32px;border-radius:6px;background:#b4554b}
+.gsel [data-k=tags] .pv:after{left:32px;top:6px;right:6px;bottom:6px;background:#d99d5f;border-radius:6px}
+.gsel [data-k=concrete] .pv{background:#2a2a29}
+.gsel [data-k=concrete] .pv:before{left:8px;top:4px;width:14px;height:36px;border-radius:0;background:#e2561d}
+.gsel [data-k=concrete] .pv:after{left:26px;top:4px;right:auto;width:14px;bottom:4px;background:#cfcdc6;border-radius:0}
 </style>
 </head>
 <body data-tool="select">
