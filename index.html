@@ -1006,6 +1006,37 @@ dialog .row .ibx{width:42px;height:42px;border-radius:14px}
 .lq[data-glass=frost] .card:not(.bare):not(.t-shape):not(.t-draw):not(.t-pin):not(.t-heading):not(.t-lens){border-radius:20px!important}
 .lq[data-glass=frost] :is(.win,dialog,#cli){border-radius:26px!important}
 .lq[data-glass=frost] :is(#top,#dock,#zoom){border-radius:22px!important}
+/* ===== v21: анимации появления и исчезновения ===== */
+@media (prefers-reduced-motion:no-preference){
+.lq .win{animation:lqWinIn .42s cubic-bezier(.2,.9,.25,1.12)}
+.lq .win.closing{animation:lqWinOut .17s ease-in forwards}
+@keyframes lqWinIn{0%{opacity:0;transform:translateY(14px) scale(.92);filter:blur(12px)}55%{opacity:1;filter:blur(0)}100%{transform:none}}
+@keyframes lqWinOut{to{opacity:0;transform:translateY(8px) scale(.95);filter:blur(10px)}}
+.lq dialog[open]{animation:lqDlgIn .4s cubic-bezier(.2,.9,.25,1.1)}
+.lq dialog[open]::backdrop{animation:lqFade .35s ease-out}
+.lq dialog.closing{animation:lqDlgOut .19s ease-in forwards}
+.lq dialog.closing::backdrop{animation:lqFade .19s ease-in reverse forwards}
+@keyframes lqDlgIn{0%{opacity:0;transform:translateY(24px) scale(.9);filter:blur(14px)}60%{opacity:1;filter:blur(0)}100%{transform:none}}
+@keyframes lqDlgOut{to{opacity:0;transform:translateY(12px) scale(.94);filter:blur(10px)}}
+@keyframes lqFade{from{opacity:0}}
+.lq #drawer:not([hidden]){animation:lqDrIn .38s cubic-bezier(.2,.9,.25,1.05)}
+.lq #drawer.closing{animation:lqDrOut .22s ease-in forwards}
+.lq #scrim:not([hidden]){animation:lqFade .3s ease-out}
+.lq #scrim.closing{animation:lqFade .22s ease-in reverse forwards}
+@keyframes lqDrIn{0%{opacity:0;transform:translateX(-36px) scale(.97);filter:blur(10px)}60%{opacity:1;filter:blur(0)}100%{transform:none}}
+@keyframes lqDrOut{to{opacity:0;transform:translateX(-30px) scale(.97);filter:blur(8px)}}
+.lq .pop{animation:lqPopIn .24s cubic-bezier(.2,.9,.25,1.25);transform-origin:top left}
+.lq .pop.closing{animation:lqPopOut .13s ease-in forwards}
+@keyframes lqPopIn{0%{opacity:0;transform:translateY(-6px) scale(.9);filter:blur(6px)}100%{transform:none}}
+@keyframes lqPopOut{to{opacity:0;transform:translateY(-4px) scale(.94);filter:blur(4px)}}
+.lq #toast{filter:blur(6px);transition:opacity .25s,transform .4s cubic-bezier(.2,.9,.25,1.3),filter .3s}
+.lq #toast.on{filter:none}
+.lq #cards.reveal>.card{animation:lqCardIn .55s cubic-bezier(.2,.9,.25,1.1) backwards;animation-delay:calc(var(--i,0)*22ms)}
+@keyframes lqCardIn{0%{opacity:0;transform:translateY(16px) scale(.94);filter:blur(10px)}70%{filter:blur(0)}}
+.lq #bload{animation:lqFade .25s ease-out}
+}
+.sfxvol{display:flex!important;align-items:center;gap:10px;margin:4px 0 8px;color:var(--mut)}
+.sfxvol input{flex:1;accent-color:var(--acc)}
 </style>
 </head>
 <body data-tool="select">

@@ -1423,6 +1423,83 @@ for(const [sel,dlg] of [['#sClose','#settings'],['#tplX','#tpl']]){const b=$(sel
 {const _rbl=renderBoardList;renderBoardList=function(){_rbl.apply(this,arguments);const sb=$('#subsBtn');if(!sb)return;const hide=localStorage.hideSubs==='1';
   sb.className='ibx'+(hide?'':' on');sb.removeAttribute('style');sb.innerHTML=ic('tree',18);const t=hide?'Показать поддоски':'Скрыть поддоски';sb.title=t;sb.setAttribute('aria-label',t)}}
 if(typeof renderBoardList==='function')renderBoardList();
+
+/* ================= звуки: стеклянные тона + анимации появления/исчезновения ================= */
+if(localStorage.sfxV!=='2'){localStorage.sfxV='2';localStorage.sfx='1';localStorage.sfxVol=localStorage.sfxVol||'0.6'}
+let sfxBus=null,sfxLast=0;
+function sfxInit(){if(sfxBus)return sfxBus;sfxCtx??=new(window.AudioContext||window.webkitAudioContext)();const a=sfxCtx;
+  const out=a.createGain(),dly=a.createDelay(),fb=a.createGain(),lp=a.createBiquadFilter(),wet=a.createGain();
+  dly.delayTime.value=.13;fb.gain.value=.28;lp.type='lowpass';lp.frequency.value=3200;wet.gain.value=.22;
+  out.connect(a.destination);out.connect(dly);dly.connect(lp);lp.connect(fb);fb.connect(dly);lp.connect(wet);wet.connect(a.destination);
+  return sfxBus={a,out}}
+function tone(f,d,{type='sine',vol=.5,at=0,to=null,atk=.006}={}){const{a,out}=sfxBus,t=a.currentTime+at,o=a.createOscillator(),g=a.createGain();o.type=type;
+  o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(out);o.start(t);o.stop(t+d+.02)}
+function swoosh(d,f0,f1,{vol=.35,at=0}={}){const{a,out}=sfxBus,t=a.currentTime+at,n=Math.ceil(a.sampleRate*d),buf=a.createBuffer(1,n,a.sampleRate),c=buf.getChannelData(0);
+  for(let i=0;i<n;i++)c[i]=Math.random()*2-1;const s=a.createBufferSource(),bp=a.createBiquadFilter(),g=a.createGain();s.buffer=buf;bp.type='bandpass';bp.Q.value=1.4;
+  bp.frequency.setValueAtTime(f0,t);bp.frequency.exponentialRampToValueAtTime(f1,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+d*.35);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(bp);bp.connect(g);g.connect(out);s.start(t);s.stop(t+d)}
+const SFX={
+  tick:()=>tone(1900,.035,{vol:.18}),
+  key:()=>tone(2600,.02,{vol:.07,type:'triangle'}),
+  tool:()=>tone(1320,.05,{vol:.18,type:'triangle'}),
+  open:()=>{tone(660,.16,{vol:.28});tone(990,.22,{vol:.22,at:.05});swoosh(.18,900,3200,{vol:.12})},
+  close:()=>{tone(880,.12,{vol:.2,to:520});swoosh(.14,2600,700,{vol:.1})},
+  dlg:()=>{[523,659,784].forEach((f,i)=>tone(f,.42,{vol:.16,type:'triangle',at:i*.035,atk:.03}));swoosh(.3,500,2400,{vol:.12})},
+  dlgx:()=>{tone(784,.18,{vol:.18,to:392,type:'triangle'});swoosh(.2,2000,500,{vol:.1})},
+  drawer:()=>swoosh(.26,400,2600,{vol:.22}),
+  drawerx:()=>swoosh(.22,2400,380,{vol:.18}),
+  add:()=>{tone(330,.12,{vol:.3,to:720});tone(1440,.08,{vol:.1,at:.06})},
+  del:()=>{tone(420,.2,{vol:.26,to:110,type:'triangle'});swoosh(.18,1800,300,{vol:.14})},
+  check:()=>{tone(1046,.12,{vol:.22});tone(1568,.18,{vol:.18,at:.05})},
+  uncheck:()=>tone(784,.1,{vol:.16,to:600}),
+  done:()=>[523,659,784,1046,1318].forEach((f,i)=>tone(f,.5,{vol:.18,at:i*.07,type:'triangle'})),
+  ok:()=>tone(1175,.16,{vol:.12}),
+  err:()=>{tone(220,.14,{vol:.28,type:'triangle',to:160});tone(200,.16,{vol:.24,type:'triangle',to:140,at:.13})},
+  board:()=>{swoosh(.4,300,3000,{vol:.16});[392,587,880].forEach((f,i)=>tone(f,.5,{vol:.12,at:.08+i*.05,atk:.04}))},
+  undo:()=>tone(700,.1,{vol:.18,to:460}),
+  redo:()=>tone(460,.1,{vol:.18,to:700}),
+  copy:()=>{tone(1200,.05,{vol:.16});tone(1600,.06,{vol:.14,at:.05})}
+};
+sfx=function(k){if(localStorage.sfx==='0')return;const now=performance.now();if((k==='tick'||k==='key'||k==='ok')&&now-sfxLast<60)return;
+  try{sfxInit();if(sfxCtx.state==='suspended')sfxCtx.resume();sfxBus.out.gain.value=+(localStorage.sfxVol||.6)*.9;(SFX[k]||SFX.tick)();if(k!=='tick'&&k!=='key')sfxLast=now}catch{}};
+/* куда навешиваем */
+const lqMotion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
+{const _a=addItem;addItem=function(...a){sfx('add');sfxLast=performance.now();return _a.apply(this,a)}}
+{const _d=deleteSel;deleteSel=function(...a){sfx('del');return _d.apply(this,a)}}
+{const _d=dupSel;dupSel=function(...a){sfx('copy');return _d.apply(this,a)}}
+{const _t=setTool;setTool=function(t,...a){const was=document.body.dataset.tool;const r=_t.call(this,t,...a);if(was&&was!==t&&lqBootDone)sfx('tool');return r}}
+{const _c=celebrate;celebrate=function(...a){sfx('done');sfxLast=performance.now();return _c.apply(this,a)}}
+{const _o=openBoard;openBoard=function(...a){if(lqBootDone)sfx('board');return _o.apply(this,a)}}
+document.addEventListener('change',e=>{const t=e.target;if(t.type==='checkbox'&&!t.closest('dialog'))sfx(t.checked?'check':'uncheck')},true);
+document.addEventListener('click',e=>{const c=e.target.closest('#cards .cb, #cards .chk, .kt .cb');if(c)setTimeout(()=>sfx(c.closest('.done,.on,[aria-checked=true]')?'check':'uncheck'),0)},true);
+addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.target.matches?.('input,textarea,[contenteditable]'))return;const k=e.key.toLowerCase();
+  if(k==='z')sfx(e.shiftKey?'redo':'undo');else if(k==='y')sfx('redo')},true);
+/* окна */
+{const _cw=closeWin;closeWin=function(id){if(wins[id])sfx('close');return _cw(id)}}
+/* диалоги: появление и плавное закрытие */
+{const P=HTMLDialogElement.prototype,_sm=P.showModal,_cl=P.close;
+  P.showModal=function(){this.classList.remove('closing');clearTimeout(this._ct);const r=_sm.apply(this,arguments);sfx('dlg');return r};
+  P.close=function(v){if(!this.open||this.classList.contains('closing'))return;sfx('dlgx');if(!lqMotion())return _cl.call(this,v);
+    this.classList.add('closing');this._ct=setTimeout(()=>{this.classList.remove('closing');_cl.call(this,v)},190)}}
+document.addEventListener('cancel',e=>{if(e.target instanceof HTMLDialogElement){e.preventDefault();e.target.close()}},true);
+/* боковая панель */
+let drT=0;
+{const _o=openDrawer,_c=closeDrawer;
+  openDrawer=function(){clearTimeout(drT);$('#drawer').classList.remove('closing');$('#scrim').classList.remove('closing');const was=!$('#drawer').hidden;_o();if(!was)sfx('drawer')};
+  closeDrawer=function(){const d=$('#drawer');if(d.hidden||d.classList.contains('closing'))return _c();sfx('drawerx');if(!lqMotion())return _c();
+    d.classList.add('closing');$('#scrim').classList.add('closing');drT=setTimeout(()=>{d.classList.remove('closing');$('#scrim').classList.remove('closing');_c()},220)}}
+/* всплывающие меню */
+{const _cp=closePops;closePops=function(){if(!lqMotion())return _cp();document.querySelectorAll('.pop:not(.closing)').forEach(p=>{p.classList.add('closing');p.style.pointerEvents='none';setTimeout(()=>p.remove(),130)})}}
+/* карточки проявляются волной после загрузки доски */
+new MutationObserver(()=>{const c=$('#cards');if(c.classList.contains('loading')){c._wasL=true;return}if(!c._wasL||!lqMotion())return;c._wasL=false;
+  [...c.children].slice(0,60).forEach((el,i)=>el.style.setProperty('--i',i));c.classList.add('reveal');setTimeout(()=>c.classList.remove('reveal'),1400)}).observe($('#cards'),{attributes:true,attributeFilter:['class']});
+/* настройки звука */
+(()=>{const old=$('#sSfx')?.closest('label');if(!old)return;old.lastChild.textContent=' Звуки интерфейса';
+  const cb=$('#sSfx');cb.checked=localStorage.sfx!=='0';cb.onchange=e=>{localStorage.sfx=e.target.checked?'1':'0';sfx('check')};
+  const vol=h('input',{type:'range',min:'0.1',max:'1',step:'0.05',value:localStorage.sfxVol||'0.6',oninput:e=>{localStorage.sfxVol=e.target.value},onchange:()=>sfx('done')});
+  old.after(h('label',{className:'sfxvol'},ic('music',16),vol))})();
+{const _os=openSettings;openSettings=function(){_os();const c=$('#sSfx');if(c)c.checked=localStorage.sfx!=='0'}}
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
