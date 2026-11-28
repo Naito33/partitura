@@ -1384,7 +1384,7 @@ CMDS.boot='boot — показать заставку загрузки';
 
 
 /* ================= эффект стекла: мягкое / матовое / жидкое ================= */
-const GLASS={soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
+const GLASS={street:{l:'Стрит',d:'Неон, граффити, картинки светятся по краям'},soft:{l:'Мягкое',d:'Лёгкое, быстрое, по умолчанию'},frost:{l:'Матовое',d:'Чёткие фигуры, сильное размытие и зерно'},liquid:{l:'Жидкое',d:'Толстое стекло, блики и преломление'}};
 document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lqRefract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.006 0.01" numOctaves="2" seed="7" result="t"/><feGaussianBlur in="t" stdDeviation="3" result="tb"/><feDisplacementMap in="SourceGraphic" in2="tb" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter></svg>');
 function setGlass(k,quiet){if(!GLASS[k])k='soft';localStorage.glass=k;document.documentElement.dataset.glass=k;
   document.querySelectorAll('.gsel button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));if(!quiet)toast('Стекло: '+GLASS[k].l)}
@@ -1500,6 +1500,30 @@ new MutationObserver(()=>{const c=$('#cards');if(c.classList.contains('loading')
   const vol=h('input',{type:'range',min:'0.1',max:'1',step:'0.05',value:localStorage.sfxVol||'0.6',oninput:e=>{localStorage.sfxVol=e.target.value},onchange:()=>sfx('done')});
   old.after(h('label',{className:'sfxvol'},ic('music',16),vol))})();
 {const _os=openSettings;openSettings=function(){_os();const c=$('#sSfx');if(c)c.checked=localStorage.sfx!=='0'}}
+
+/* ================= STREET — неон, граффити, светящиеся картинки ================= */
+GLASS.street={l:'Стрит',d:'Неон, граффити, картинки светятся по краям'};
+(()=>{const sel=$('.gsel');if(!sel||sel.querySelector('[data-k=street]'))return;const k='street',g=GLASS[k];
+  const b=h('button',{type:'button',onclick:()=>setGlass(k)},h('div',{className:'pv'}),h('b',{},g.l),h('small',{},g.d));b.dataset.k=k;sel.prepend(b)})();
+if(localStorage.glassV!=='street2'){localStorage.glassV='street2';setGlass('street',true)}
+const stTag=h('b',{className:'sttag'});$('#lqBg')?.append(stTag);
+const stOn=()=>document.documentElement.dataset.glass==='street';
+function stGlow(){if(!stOn())return;for(const im of document.querySelectorAll('#cards .t-image .imw .im')){const w=im.closest('.imw'),bd=w.parentElement;const src=im.currentSrc||im.src;if(!src)continue;
+    let g=bd.querySelector(':scope>.imglow');if(!g){g=h('div',{className:'imglow'});bd.prepend(g)}
+    if(g._src!==src){g._src=src;g.style.backgroundImage=`url("${src.replace(/"/g,'%22')}")`}
+    g.style.left=w.offsetLeft+'px';g.style.top=w.offsetTop+'px';g.style.width=w.offsetWidth+'px';g.style.height=w.offsetHeight+'px'}}
+let stT=0;const stSched=()=>{cancelAnimationFrame(stT);stT=requestAnimationFrame(stGlow)};
+new MutationObserver(ms=>{if(!stOn())return;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&!n.classList.contains('imglow')){stSched();return}}).observe($('#cards'),{childList:true,subtree:true});
+document.addEventListener('load',e=>{if(e.target.classList?.contains('im'))stSched()},true);
+function stTagText(){const b=board();stTag.textContent=(b?.title||'PARTITURA').slice(0,18)}
+{const _pa=paintAll;paintAll=function(){_pa();if(stOn()){stTagText();stSched()}}}
+{const _sg=setGlass;setGlass=function(k,q){_sg(k,q);if(stOn()){stTagText();stSched()}}}
+stTagText();setTimeout(stSched,300);
+/* орбиты, искры и микротипографика по углам */
+(()=>{const bg=$('#lqBg');if(!bg)return;const o=h('div',{className:'storb'});
+  o.innerHTML='<svg viewBox="0 0 1000 1000" preserveAspectRatio="none"><ellipse cx="560" cy="430" rx="470" ry="150" transform="rotate(-14 560 430)"/><ellipse cx="520" cy="470" rx="400" ry="110" transform="rotate(-14 520 470)"/><ellipse cx="300" cy="860" rx="520" ry="210" transform="rotate(8 300 860)"/><circle class="d" cx="140" cy="508" r="5"/><circle class="d" cx="930" cy="312" r="3.5"/><path class="sp" d="M820 640l4 14 14 4-14 4-4 14-4-14-14-4 14-4z"/><path class="sp" d="M180 220l3 10 10 3-10 3-3 10-3-10-10-3 10-3z"/></svg>';
+  bg.append(o);bg.append(h('div',{className:'stmeta l'},'PARTITURA',h('br'),'SYS_01 — ',String(new Date().getFullYear())));
+  bg.append(h('div',{className:'stmeta r'},'IDEAS · DESIGN · PROGRESS'))})();
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;

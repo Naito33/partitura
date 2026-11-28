@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#06070b">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&family=Onest:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Unbounded:wght@500;800&family=Pixelify+Sans:wght@400;700&family=Manrope:wght@300;400;600&family=Dela+Gothic+One&family=Onest:wght@400;500;600&family=Rubik+Glitch&family=Rubik+Wet+Paint&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <title>Partitura</title>
@@ -1037,6 +1037,95 @@ dialog .row .ibx{width:42px;height:42px;border-radius:14px}
 }
 .sfxvol{display:flex!important;align-items:center;gap:10px;margin:4px 0 8px;color:var(--mut)}
 .sfxvol input{flex:1;accent-color:var(--acc)}
+/* ===== STREET: неон, граффити, ретрофутуризм ===== */
+[data-theme=liquid][data-glass=street]{--bg:#09090c;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.07);--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.1);--mut:#8f8fa3;
+  --fs:"Rubik Wet Paint","Unbounded",sans-serif;--fg:"Rubik Glitch","Unbounded",sans-serif}
+.sttag,.imglow{display:none}
+.lq[data-glass=street] #lqBg{background:#09090c}
+.lq[data-glass=street] #lqBg i{opacity:.5;filter:blur(40px);border-radius:50%}
+.lq[data-glass=street] #lqBg i:nth-child(1){left:-8vmax;top:-12vmax;width:42vmax;height:34vmax;background:radial-gradient(closest-side,var(--b1),transparent 75%)}
+.lq[data-glass=street] #lqBg i:nth-child(2){right:-6vmax;top:18vh;width:30vmax;height:38vmax;background:radial-gradient(closest-side,var(--b3),transparent 75%);opacity:.38}
+.lq[data-glass=street] #lqBg i:nth-child(3){left:30vw;bottom:-18vmax;width:46vmax;height:30vmax;background:radial-gradient(closest-side,var(--b2),transparent 75%);opacity:.4}
+.lq[data-glass=street] #lqBg i:nth-child(4){left:8vw;top:52vh;width:14vmax;height:14vmax;background:radial-gradient(closest-side,var(--b4),transparent 75%);opacity:.45}
+/* ретро-сетка горизонта */
+.lq[data-glass=street] #lqBg:before{inset:auto -50% -2% -50%;height:52%;z-index:1;opacity:.55;
+  background:linear-gradient(color-mix(in srgb,var(--acc2) 55%,transparent) 1px,transparent 1px) 0 0/70px 70px,linear-gradient(90deg,color-mix(in srgb,var(--acc) 45%,transparent) 1px,transparent 1px) 0 0/70px 70px;
+  transform:perspective(420px) rotateX(64deg);transform-origin:50% 100%;-webkit-mask:linear-gradient(transparent,#000 75%);mask:linear-gradient(transparent,#000 75%)}
+/* растровые точки, как на плакате */
+.lq[data-glass=street] #lqBg:after{opacity:1;mix-blend-mode:normal;background:radial-gradient(rgba(255,255,255,.1) 1px,transparent 1.6px) 0 0/7px 7px;
+  -webkit-mask:radial-gradient(ellipse 45% 40% at 78% 22%,#000,transparent),radial-gradient(ellipse 35% 35% at 12% 78%,#000,transparent);mask:radial-gradient(ellipse 45% 40% at 78% 22%,#000,transparent),radial-gradient(ellipse 35% 35% at 12% 78%,#000,transparent)}
+/* тег-граффити с названием доски */
+.lq[data-glass=street] .sttag{display:block;position:absolute;z-index:1;right:3vw;top:16vh;max-width:90vw;font:400 clamp(70px,13vw,210px)/.9 var(--fs);letter-spacing:-.01em;white-space:nowrap;
+  transform:rotate(-7deg);background:linear-gradient(100deg,var(--b1),var(--b3) 55%,var(--b2));-webkit-background-clip:text;background-clip:text;color:transparent;opacity:.16;filter:blur(.6px)}
+/* хром: тёмное дымчатое стекло без обводки */
+.lq[data-glass=street] :is(#top,#dock,#zoom,.glass,.win,dialog,.pop,#cli,#ctx,#minimap,#toast){background:rgba(12,12,16,.72)!important;-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);
+  border:0!important;box-shadow:0 0 0 1px rgba(255,255,255,.05),0 0 60px -24px var(--acc),0 24px 60px -24px #000!important}
+.lq[data-glass=street] :is(#top,#dock,#zoom){border-radius:16px!important}
+.lq[data-glass=street] :is(.win,dialog,#cli){border-radius:18px!important}
+.lq[data-glass=street] #boardTitle{font-family:var(--fg);font-size:22px;letter-spacing:.01em;color:#fff;text-shadow:0 0 18px color-mix(in srgb,var(--acc) 60%,transparent)}
+/* карточки: без рамок, мягкое свечение своим цветом */
+.lq[data-glass=street] .card:not(.bare):not(.t-heading):not(.t-draw):not(.t-pin):not(.t-lens):not(.t-shape):not(.t-sticky):not(.t-frame):not(.t-image){
+  background:linear-gradient(170deg,rgba(26,26,34,.82),rgba(14,14,20,.78))!important;border:0!important;border-radius:10px!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 0 0 1px rgba(255,255,255,.035),0 0 44px -14px color-mix(in srgb,var(--hue,var(--acc)) 70%,transparent),0 18px 40px -22px #000!important}
+.lq[data-glass=street] .card.tint:not(.t-sticky):not(.bare):not(.t-frame):not(.t-image){background:linear-gradient(170deg,color-mix(in srgb,var(--hue) 22%,rgba(20,20,28,.85)),rgba(14,14,20,.8))!important;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--hue) 18%,transparent),0 0 56px -10px color-mix(in srgb,var(--hue) 75%,transparent),0 18px 40px -22px #000!important}
+.lq[data-glass=street] .card.sel:not(.bare){box-shadow:0 0 0 2px var(--acc),0 0 50px -6px var(--acc),0 18px 40px -22px #000!important}
+.lq[data-glass=street] .kind{color:var(--acc);font:500 9.5px/1 var(--mono);letter-spacing:.18em}
+.lq[data-glass=street] .kind span:before{content:'// ';opacity:.6}
+/* стикеры как распылённая краска: размытые края */
+.lq[data-glass=street] :is(.t-sticky,.t-sticky.tint){background:var(--hue,var(--acc))!important;border:0!important;border-radius:3px!important;
+  box-shadow:0 0 18px 3px color-mix(in srgb,var(--hue,var(--acc)) 80%,transparent),0 0 70px 6px color-mix(in srgb,var(--hue,var(--acc)) 35%,transparent)!important}
+.lq[data-glass=street] .t-sticky .txt{color:#0b0b10;font-weight:700}
+.lq[data-glass=street] .t-sticky .kind{color:rgba(0,0,0,.55)}
+/* заголовки — граффити */
+.lq[data-glass=street] .t-heading .txt{font-family:var(--fs)!important;font-weight:400!important;text-transform:none;letter-spacing:0;font-size:46px;line-height:1;
+  background:linear-gradient(95deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px color-mix(in srgb,var(--acc) 55%,transparent))}
+/* картинки: размытые края + свечение собственными цветами */
+.lq[data-glass=street] .card.t-image{background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+.lq[data-glass=street] .t-image .bd{position:relative;padding:0}
+.lq[data-glass=street] .t-image .imw{background:transparent;border-radius:0;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent),linear-gradient(transparent,#000 10%,#000 90%,transparent);-webkit-mask-composite:source-in;
+  mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent) intersect,linear-gradient(transparent,#000 10%,#000 90%,transparent)}
+.lq[data-glass=street] .t-image .im{border-radius:0;background:transparent}
+.lq[data-glass=street] .imglow{display:block;position:absolute;z-index:-1;pointer-events:none;background-size:cover;background-position:center;
+  filter:blur(26px) saturate(2.2) brightness(1.25);opacity:.9;transform:scale(1.12)}
+.lq[data-glass=street] .card.t-image.sel{box-shadow:none!important}
+.lq[data-glass=street] .card.t-image.sel .imw{outline:2px solid var(--acc);outline-offset:4px}
+/* прогресс и связи светятся */
+.lq[data-glass=street] .fill{background:linear-gradient(90deg,var(--acc),var(--acc2))!important;box-shadow:0 0 14px -2px var(--acc)}
+.lq[data-glass=street] .bar{background:rgba(255,255,255,.08);border-radius:2px}
+.lq[data-glass=street] #links{filter:drop-shadow(0 0 4px var(--acc))}
+.lq[data-glass=street] :is(.kc,.kt){border:0;background:rgba(255,255,255,.04);box-shadow:none}
+.lq[data-glass=street] .kt{background:rgba(255,255,255,.06);border-radius:6px}
+.lq[data-glass=street] .ibx{border:0;background:rgba(255,255,255,.06)}
+.lq[data-glass=street] .ibx:hover{box-shadow:0 0 18px -4px var(--acc)}
+.gsel{grid-template-columns:repeat(2,1fr)}
+.gsel [data-k=street] .pv{background:#09090c}
+.gsel [data-k=street] .pv:before{background:radial-gradient(closest-side,#ff2bd6,transparent);filter:blur(4px)}
+.gsel [data-k=street] .pv:after{background:linear-gradient(90deg,#c6ff00,#00e5ff);border-radius:3px;box-shadow:0 0 14px 2px rgba(198,255,0,.6);left:22px;right:22px;top:14px;bottom:14px}
+/* космос: затмение, тёплый warp-градиент, орбиты */
+.storb,.stmeta{display:none}
+.lq[data-glass=street] #lqBg i:nth-child(1){left:auto;right:-14vmax;top:-22vmax;width:60vmax;height:60vmax;filter:blur(6px);opacity:1;animation:none;
+  background:radial-gradient(circle,#09090c 54%,color-mix(in srgb,var(--b1) 90%,#fff) 58%,color-mix(in srgb,var(--b1) 55%,transparent) 61%,transparent 71%)}
+.lq[data-glass=street] #lqBg i:nth-child(2){left:-10vmax;right:auto;top:auto;bottom:-26vmax;width:56vmax;height:56vmax;filter:blur(10px);opacity:.9;animation:none;
+  background:radial-gradient(circle at 58% 40%,transparent 50%,color-mix(in srgb,var(--b2) 80%,#fff) 53%,color-mix(in srgb,var(--b2) 40%,transparent) 58%,transparent 68%)}
+.lq[data-glass=street] #lqBg i:nth-child(3){left:34vw;top:30vh;bottom:auto;width:34vmax;height:16vmax;border-radius:50%;filter:blur(46px);opacity:.42;transform:rotate(-24deg);
+  background:linear-gradient(90deg,var(--b4),var(--b3))}
+.lq[data-glass=street] #lqBg i:nth-child(4){left:12vw;top:40vh;width:2vmax;height:2vmax;filter:blur(1px);opacity:.9;background:radial-gradient(circle,#fff,color-mix(in srgb,var(--b3) 70%,transparent) 45%,transparent 70%)}
+.lq[data-glass=street] .storb{display:block;position:absolute;inset:0;z-index:1}
+.lq[data-glass=street] .storb svg{width:100%;height:100%}
+.lq[data-glass=street] .storb ellipse{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1;vector-effect:non-scaling-stroke}
+.lq[data-glass=street] .storb .d{fill:#fff}
+.lq[data-glass=street] .storb .sp{fill:#fff;opacity:.7}
+.lq[data-glass=street] .stmeta{display:block;position:absolute;z-index:1;font:500 10px/1.6 var(--mono);letter-spacing:.32em;color:rgba(255,255,255,.4);text-transform:uppercase}
+.lq[data-glass=street] .stmeta.l{left:22px;bottom:96px}
+.lq[data-glass=street] .stmeta.r{right:14px;top:50%;writing-mode:vertical-rl;transform:translateY(-50%)}
+/* заголовки — глитч */
+.lq[data-glass=street] .t-heading .txt{font-family:var(--fg)!important;font-size:34px;text-transform:uppercase;line-height:1}
+/* скобки-уголки у картинок */
+.lq[data-glass=street] .t-image .bd:after{content:'';position:absolute;inset:-6px;pointer-events:none;opacity:.85;
+  --k:linear-gradient(var(--acc),var(--acc));
+  background:var(--k) 0 0/14px 1.5px,var(--k) 0 0/1.5px 14px,var(--k) 100% 0/14px 1.5px,var(--k) 100% 0/1.5px 14px,var(--k) 0 100%/14px 1.5px,var(--k) 0 100%/1.5px 14px,var(--k) 100% 100%/14px 1.5px,var(--k) 100% 100%/1.5px 14px;background-repeat:no-repeat}
 </style>
 </head>
 <body data-tool="select">
