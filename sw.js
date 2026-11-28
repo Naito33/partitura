@@ -1,5 +1,5 @@
 // App shell cache: network first (so updates arrive), cache when offline.
-const C = 'partitura-v19';
+const C = 'partitura-v20';
 const SHELL = ['./', './index.html', './app.js', './extras.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => e.waitUntil(

@@ -1396,6 +1396,33 @@ CMDS.glass='glass soft|frost|liquid — эффект стекла';
 {const _run=cliRun;cliRun=function(line){const[c,a]=line.trim().split(/\s+/);if(c?.toLowerCase()==='glass'){cliPrint(cliPs()+' '+line.trim(),'m');
   if(!GLASS[a]){cliPrint('glass '+Object.keys(GLASS).join('|'),'e');return}setGlass(a);cliPrint('стекло: '+GLASS[a].l,'a');return}return _run(line)}}
 
+
+/* ================= иконки вместо текстовых кнопок ================= */
+Object.assign(ICONS,{
+  sliders:P('M4 21v-7|M4 10V3|M12 21v-9|M12 8V3|M20 21v-5|M20 12V3|M1 14h6|M9 8h6|M17 16h6'),
+  download:P('M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|m7 10 5 5 5-5|M12 15V3'),
+  upload:P('M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|m17 8-5-5-5 5|M12 3v12'),
+  userplus:P('M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2|ccx="9" cy="7" r="4"|M19 8v6|M22 11h-6'),
+  unlink:P('m18.84 12.25 1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71|m5.17 11.75-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71|M8 2v3|M2 8h3|M16 22v-3|M22 16h-3'),
+  map:P('M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3|M9 3v15|M15 6v15'),
+  save:P('M20 6 9 17l-5-5')
+});
+function iconBtn(sel,icon,title,pri){const b=$(sel);if(!b)return;b.className='ibx'+(pri?' pri':'');b.removeAttribute('style');b.innerHTML=ic(icon,18);b.title=title;b.setAttribute('aria-label',title)}
+iconBtn('#newBoard','plus','Новый проект',true);
+iconBtn('#openSet','sliders','Настройки');
+iconBtn('#exportBtn','download','Экспорт — резервная копия всех досок (.json)');
+iconBtn('#importBtn','upload','Импорт — резервная копия .json или файл tldraw .tldr');
+iconBtn('#inviteBtn','userplus','Пригласить друга',true);
+iconBtn('#sOff','unlink','Отключить синхронизацию');
+iconBtn('#sSave','save','Сохранить',true);
+iconBtn('#mmBtn','map','Мини-карта');
+for(const [sel,dlg] of [['#sClose','#settings'],['#tplX','#tpl']]){const b=$(sel);if(!b)continue;iconBtn(sel,'x','Закрыть');b.classList.add('xcorner');$(dlg)?.prepend(b)}
+/* подписи в нижней панели — компактно рядом с иконками */
+(()=>{const df=$('#drawer .df');if(df&&!df.querySelector('.dfl')){df.prepend(h('span',{className:'dfl'},'PARTITURA'))}})();
+/* поддоски: иконка-переключатель */
+{const _rbl=renderBoardList;renderBoardList=function(){_rbl.apply(this,arguments);const sb=$('#subsBtn');if(!sb)return;const hide=localStorage.hideSubs==='1';
+  sb.className='ibx'+(hide?'':' on');sb.removeAttribute('style');sb.innerHTML=ic('tree',18);const t=hide?'Показать поддоски':'Скрыть поддоски';sb.title=t;sb.setAttribute('aria-label',t)}}
+if(typeof renderBoardList==='function')renderBoardList();
 /* ================= запуск ================= */
 (async()=>{setTheme(localStorage.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));buildDock();setTool('select');
   for(const b of await idb.all('boards'))boards[b.id]=b;
